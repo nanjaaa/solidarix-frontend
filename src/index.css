@@ -1,0 +1,53 @@
+@import "tailwindcss";
+/*  - pour configurer les préfixes en v4, on fait comme ci-dessus et pour l'utiliser on mets : (ex tw:)
+    - pour importer les plugins en tailwind v4, on fait comme suit
+    @plugin "daisyui";
+*/
+
+
+body {
+  @apply bg-background-ow
+}
+
+@theme{
+
+  --color-primary-green : #3EA588;
+  --color-hover-green   : #348A71;
+
+  --color-background-ow : #F7F4EF;
+
+  --color-primary-darkblue: #0A203E;
+  --color-hover-blue    : #274973;
+
+  --color-secondary-lightgray: #2C3037;
+  --color-x-white       : #ffffff;
+  --color-x-black       : #000000
+
+
+}
+
+
+@layer components {
+
+  .btn{
+    @apply inline-flex items-center justify-center font-bold rounded-[15px] text-background-ow bg-primary-green hover:bg-hover-green transition-colors ;
+  }
+
+  .btn-base {
+    @apply text-[14px] px-4 py-2; /* taille petite */
+  }
+
+  .btn-large {
+    @apply text-[20px] px-4 py-2;  /* taille moyenne */
+  }
+
+  .link {
+    @apply inline-flex items-center justify-center text-primary-darkblue hover:text-hover-blue px-4 py-2 font-semibold;
+  }
+
+  .card {
+    @apply rounded-2xl p-6 border-3 border-primary-darkblue space-y-4 bg-x-white;
+  }
+
+}
+
