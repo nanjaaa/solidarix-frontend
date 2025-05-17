@@ -1,8 +1,30 @@
 import LoginIllustration from '@assets/login_illustration.png'
 import { UserCircle } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import AddressAutocomplete, { type Address } from '../components/form/AdressAutocomplete'
 
 export default function RegisterPage() {
+
+  const [address, setAddress] = useState<Address>({
+    street: '',
+    postalCode: '',
+    city: '',
+    latitude: undefined,
+    longitude: undefined,
+    fullAddress: ''
+  })
+
+  const handleAddressChange = (addr: Address) => {
+    setAddress(addr)
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    console.log('Adresse soumise :', address)
+    // Ici tu envoies les données au backend
+  }
+
   return (
     <div className="min-h-screen flex flex-row items-center justify-center">
       
@@ -69,61 +91,17 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Adresse (découpée) */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="streetNumber" className="block text-sm font-medium text-primary-darkblue">
-                  Numéro
-                </label>
-                <input
-                  type="text"
-                  id="streetNumber"
-                  placeholder="10"
-                  className="input-style"
-                />
-              </div>
-              <div>
-                <label htmlFor="streetName" className="block text-sm font-medium text-primary-darkblue">
-                  Rue
-                </label>
-                <input
-                  type="text"
-                  id="streetName"
-                  placeholder="Rue de la Paix"
-                  className="input-style"
-                />
-              </div>
+            {/* Adresse avec autocomplétion */}
+            <div>
+              <AddressAutocomplete
+                onChange={handleAddressChange}
+              />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="postalCode" className="block text-sm font-medium text-primary-darkblue">
-                  Code postal
-                </label>
-                <input
-                  type="text"
-                  id="postalCode"
-                  placeholder="75002"
-                  className="input-style"
-                />
-              </div>
-              <div>
-                <label htmlFor="city" className="block text-sm font-medium text-primary-darkblue">
-                  Ville
-                </label>
-                <input
-                  type="text"
-                  id="city"
-                  placeholder="Paris"
-                  className="input-style"
-                />
-              </div>
-            </div>
-
-            {/* Champs cachés */}
-            <input type="hidden" id="fullAddress" />
-            <input type="hidden" id="latitude" />
-            <input type="hidden" id="longitude" />
+            {/* Champs cachés pour latitude, longitude, fullAddress */}
+            <input type="hidden" id="fullAddress" value={address.fullAddress} readOnly />
+            <input type="hidden" id="latitude" value={address.latitude ?? ''} readOnly />
+            <input type="hidden" id="longitude" value={address.longitude ?? ''} readOnly />
 
             {/* Username & Email */}
             <div className="grid grid-cols-2 gap-4">
