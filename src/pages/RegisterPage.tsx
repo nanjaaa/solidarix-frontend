@@ -1,12 +1,27 @@
 import LoginIllustration from '@assets/login_illustration.png'
 import { UserCircle } from 'lucide-react'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import AddressAutocomplete, { type Address } from '../components/form/AdressAutocomplete'
+import dayjs from 'dayjs'
+import { register } from '../services/authService'
 
 export default function RegisterPage() {
 
+  const navigate = useNavigate();
+
+  const [form, setForm] = useState({
+    username: '',
+    email: '',
+    password: '',
+    firstName: '',
+    lastName: '',
+    birthday: '',
+  });
+
   const [address, setAddress] = useState<Address>({
+    number: undefined,
+    streetName: '',
     street: '',
     postalCode: '',
     city: '',
@@ -15,14 +30,42 @@ export default function RegisterPage() {
     fullAddress: ''
   })
 
+  const [error, setError] = useState<string |null>(null);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setForm({ ...form, [id]: value });
+  };
+
   const handleAddressChange = (addr: Address) => {
     setAddress(addr)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     console.log('Adresse soumise :', address)
-    // Ici tu envoies les données au backend
+    
+    const payload = {
+      ...form,
+      birthday: dayjs(form.birthday).format('YYYY-MM-DD'),
+      address: {
+        number: address.number,
+        streetName: address.streetName || '',
+        street: address.street,
+        postalCode: address.postalCode,
+        city: address.city,
+        fullAddress: address.fullAddress,
+        latitude: address.latitude,
+        longitude: address.longitude,
+      },
+    };
+
+    try {
+      await register(payload);
+      navigate('/login');
+    } catch (err) {
+      setError("Une erreur est survenue lors de l'inscription. Vérifiez les champs.");
+    }
   }
 
   return (
@@ -51,7 +94,7 @@ export default function RegisterPage() {
             </h2>
           </div>
 
-          <form className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
 
             {/* Prénom, Nom */}
             <div className="grid grid-cols-2 gap-4">
@@ -62,8 +105,11 @@ export default function RegisterPage() {
                 <input
                   type="text"
                   id="firstName"
+                  value={form.firstName}
+                  onChange={handleChange}
                   placeholder="Jean"
                   className="input-style"
+                  required
                 />
               </div>
               <div>
@@ -73,8 +119,11 @@ export default function RegisterPage() {
                 <input
                   type="text"
                   id="lastName"
+                  value={form.lastName}
+                  onChange={handleChange}
                   placeholder="Dupont"
                   className="input-style"
+                  required
                 />
               </div>
             </div>
@@ -87,7 +136,10 @@ export default function RegisterPage() {
               <input
                 type="date"
                 id="birthday"
+                value={form.birthday}
+                onChange={handleChange}
                 className="input-style"
+                required
               />
             </div>
 
@@ -112,8 +164,11 @@ export default function RegisterPage() {
                 <input
                   type="text"
                   id="username"
+                  value={form.username}
+                  onChange={handleChange}
                   placeholder="jeandupont"
                   className="input-style"
+                  required
                 />
               </div>
               <div>
@@ -123,8 +178,11 @@ export default function RegisterPage() {
                 <input
                   type="email"
                   id="email"
+                  value={form.email}
+                  onChange={handleChange}
                   placeholder="jean.dupont@email.fr"
                   className="input-style"
+                  required
                 />
               </div>
             </div>
@@ -137,10 +195,15 @@ export default function RegisterPage() {
               <input
                 type="password"
                 id="password"
+                value={form.password}
+                onChange={handleChange}
                 placeholder="••••••••"
                 className="input-style"
+                required
               />
             </div>
+
+            {error && <p className="text-sm text-red-600">{error}</p>}
 
             {/* Bouton */}
             <button type="submit" className="btn btn-base w-full">

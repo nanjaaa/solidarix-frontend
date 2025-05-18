@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useKeyboardNavigation } from "../../hooks/UseKeyBoardNavigation";
 
 export type Address = {
+    number?         : number;
+    streetName      : string;
     street          : string;
     postalCode      : string;
     city            : string;
@@ -22,6 +24,19 @@ interface Suggestion {
   latitude: number
   longitude: number
 }
+
+// Utilitaire pour extraire numéro et rue
+function extractNumberAndStreet(fullName: string): { number: number | null, street: string } {
+  const parts = fullName.trim().split(' ');
+  const firstPart = parts[0];
+
+  if (/^\d+$/.test(firstPart)) {
+    return { number: parseInt(firstPart, 10), street: parts.slice(1).join(' ') };
+  }
+
+  return { number: null, street: fullName };
+}
+
 
 export default function AddressAutocomplete({ onChange }: AddressAutocompleteProps) {
 
@@ -91,12 +106,18 @@ export default function AddressAutocomplete({ onChange }: AddressAutocompletePro
 
 
     const handleSelectSuggestion = (suggestion: Suggestion) => {
+
+        const { number, street } = extractNumberAndStreet(suggestion.name);
+
         setSelectedSuggestion(suggestion)
         setInputValue(suggestion.name)
         setManualPostalCode(suggestion.postalCode)
         setManualCity(suggestion.city)
         setManualMode(false)
+
         onChange({
+            number: number || undefined,
+            streetName: street,
             street: suggestion.name,
             postalCode: suggestion.postalCode,
             city: suggestion.city,
@@ -110,10 +131,17 @@ export default function AddressAutocomplete({ onChange }: AddressAutocompletePro
   // Quand on modifie manuellement le CP ou la ville
   useEffect(() => {
     if (manualMode) {
+
+      const { number, street } = extractNumberAndStreet(inputValue);
+
       onChange({
+        number: number ||undefined,
+        streetName: street,
         street: inputValue,
         postalCode: manualPostalCode,
         city: manualCity,
+        latitude: undefined,
+        longitude: undefined,
         fullAddress: inputValue + ', ' + manualPostalCode + ' ' + manualCity
       })
     }
@@ -141,9 +169,10 @@ export default function AddressAutocomplete({ onChange }: AddressAutocompletePro
       <input
         type="text"
         id="address"
+        name="xxxtentacion" // nom pour piéger le navigateur afin qu'il ne suggère aucune adresse
         value={inputValue}
         onChange={handleInputChange}
-        onKeyDown={onKeyDown} // <-- ici on passe le gestionnaire clavier
+        onKeyDown={onKeyDown} 
         placeholder="10 Rue de la Paix"
         className="input-style w-full"
         autoComplete="off"

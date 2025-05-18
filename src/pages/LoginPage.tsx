@@ -1,8 +1,39 @@
 import LoginIllustration from '@assets/login_illustration.png'
 import { UserCircle } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import type { AuthRequestDto } from '../types/auth'
+import { login } from '../services/authService'
+import { useAuth } from '../context/AuthContext'
 
 export default function LoginPage() {
+
+    const [form, setForm] = useState<AuthRequestDto>({
+        username: "",
+        password: "",
+    })
+
+    const [error, setError] = useState<string | null>(null);
+    const navigate = useNavigate();
+    const { setIsAuthenticated } = useAuth()
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setForm({ ...form, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const data = await login(form);
+            localStorage.setItem("token", data.token); // si token retourné
+            setIsAuthenticated(true);
+            navigate("/"); // redirection après succès
+        } catch (err) {
+            setError("Nom d'utilisateur ou mot de passe invalide.");
+        }
+    };
+
+
     return (
         
         <div className="min-h-screen flex flex-row items-center  justify-center">
@@ -31,7 +62,7 @@ export default function LoginPage() {
                         </h2>
                      </div>
 
-                    <form className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
                             <label htmlFor="username" className="block text-sm font-medium text-primary-darkblue">
                                 Nom d'utilisateur
@@ -39,8 +70,12 @@ export default function LoginPage() {
                             <input
                                 type="text"
                                 id="username"
+                                name="username"
+                                value={form.username}
+                                onChange={handleChange}
                                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green"
                                 placeholder="username"
+                                required
                             />
                         </div>
 
@@ -51,8 +86,12 @@ export default function LoginPage() {
                             <input
                                 type="password"
                                 id="password"
+                                name="password"            
+                                value={form.password} 
+                                onChange={handleChange}
                                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-green"
                                 placeholder="••••••••"
+                                required
                             />
                             <div className="text-right mt-1">
                                 <Link to="/forgot-password" className="link text-sm">
@@ -60,6 +99,8 @@ export default function LoginPage() {
                                 </Link>
                             </div>
                         </div>
+
+                        {error && <p className="text-red-600 text-sm">{error}</p>}
 
                         <button
                             type="submit"
