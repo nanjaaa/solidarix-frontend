@@ -2,9 +2,10 @@ import LoginIllustration from '@assets/login_illustration.png'
 import { UserCircle } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import AddressAutocomplete, { type Address } from '../components/form/AdressAutocomplete'
 import dayjs from 'dayjs'
 import { register } from '../services/authService'
+import { AddressFormFull } from '../components/form/AddressFormFull'
+import type { Address } from '../hooks/UseAddressAutocomplete'
 
 export default function RegisterPage() {
 
@@ -20,7 +21,7 @@ export default function RegisterPage() {
   });
 
   const [address, setAddress] = useState<Address>({
-    number: undefined,
+    number: '',
     streetName: '',
     street: '',
     postalCode: '',
@@ -145,9 +146,7 @@ export default function RegisterPage() {
 
             {/* Adresse avec autocomplétion */}
             <div>
-              <AddressAutocomplete
-                onChange={handleAddressChange}
-              />
+                <AddressFormFull value={address} onChange={handleAddressChange} />
             </div>
 
             {/* Champs cachés pour latitude, longitude, fullAddress */}

@@ -1,0 +1,98 @@
+import React, { useState, useEffect, useRef } from "react";
+import { SendHorizontal } from "lucide-react";
+import { cn } from "../../utils/ClassNames";
+
+interface ChatBubbleFormProps {
+    question: string;
+    type: "text" | "select";
+    value: string;
+    onChange: (value: string) => void;
+    onSend: () => void;
+    options?: string[];
+}
+
+
+export const ChatBubbleForm: React.FC<ChatBubbleFormProps> = ({
+    question,
+    type,
+    value,
+    onChange,
+    onSend,
+    options = [],
+    }) => {
+        const [filteredOptions, setFilteredOptions] = useState<string[]>([]);
+        const [selected, setSelected] = useState<string>("");
+
+        useEffect(() => {
+        if (type === "select" && value) {
+            const filtered = options.filter((opt) =>
+            opt.toLowerCase().startsWith(value.toLowerCase())
+            );
+            setFilteredOptions(filtered);
+        } else {
+            setFilteredOptions([]);
+        }
+        }, [value, options, type]);
+
+        const isValid = () => {
+        if (type === "text") return value.trim().length > 0;
+        if (type === "select") return options.includes(value);
+        return false;
+        };
+
+        const handleSelect = (option: string) => {
+        onChange(option);
+        setSelected(option);
+        };
+
+    return (
+    <div className="card flex flex-col py-2 px-2">
+        {/* Question Bubble */}
+        <div className="self-start bg-primary-green text-white px-4 py-2 rounded-br-3xl rounded-tl-3xl rounded-tr-3xl max-w-[60%] shadow-md select-none">
+        {question}
+        </div>
+
+        {/* Input & Send */}
+        <div className="self-end flex items-center gap-2 min-w-[150px] max-w-[50%] mt-2">
+            <input
+                type="text"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder={type === "select" ? "Choisissez parmis les options ci-dessous..." : "Tapez votre réponse..."}
+                className="bg-background-ow outline-none flex-grow px-4 py-2 rounded-bl-3xl rounded-tr-3xl rounded-tl-3xl shadow-inner border border-gray-300 min-w-0"
+            />
+
+            {isValid() && (
+                <button
+                type="button"
+                onClick={onSend}
+                className="text-primary-green hover:text-hover-green transition-colors"
+                >
+                <SendHorizontal className="w-7 h-7" />
+                </button>
+            )}
+        </div>
+
+        {/* Selectable Options */}
+        {type === "select" && options.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-2 self-end max-w-[400px]">
+            {options.map((option) => (
+            <button
+                key={option}
+                type="button"
+                onClick={() => handleSelect(option)}
+                className={cn(
+                "px-3 py-1 rounded-full border text-sm transition-colors",
+                value === option
+                    ? "bg-primary-green text-white border-primary-green"
+                    : "bg-muted text-gray-700 hover:bg-primary-green hover:text-white"
+                )}
+            >
+                {option}
+            </button>
+            ))}
+        </div>
+        )}
+    </div>
+    );
+    };

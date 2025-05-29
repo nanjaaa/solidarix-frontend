@@ -3,7 +3,7 @@ import { NavbarLink } from "./NavbarLink";
 import logo from '@assets/logo.png'
 import { useAuth } from "../../../context/AuthContext";
 import { useEffect, useRef, useState } from "react";
-import { CalendarCheck, LifeBuoy, MessageCircle, Settings2, User, UserCircle } from "lucide-react";
+import { CalendarCheck, HandHelping, LifeBuoy, MessageCircle, Settings2, User, UserCircle } from "lucide-react";
 import { TbLogout2 } from "react-icons/tb";
 
 export const Navbar = () => {
@@ -79,10 +79,21 @@ export const Navbar = () => {
                             isAuthenticated 
                             ? (
                                 <>
-                                    <NavbarLink to="/myHelpRequests">
-                                        <LifeBuoy className="inline-block mr-1 h-5 w-5" />
-                                        Mes demandes d'aides
-                                    </NavbarLink>
+                                    <Link
+                                        to="/ask-help"
+                                        className="group relative flex items-center gap-2 px-4 py-2 rounded-xl text-primary-darkblue font-semibold overflow-hidden"
+                                    >
+                                        {/* Fond doux au survol */}
+                                        <span className="absolute inset-0 bg-primary-light opacity-0 group-hover:opacity-100 transition duration-300 rounded-xl z-0"></span>
+
+                                        {/* Icône */}
+                                        <HandHelping className="w-5 h-5 z-10" />
+
+                                        {/* Texte avec soulignement animé */}
+                                        <span className="z-10 relative after:absolute after:left-0 after:-bottom-1 after:h-0.5 after:w-0 after:bg-primary-darkblue after:transition-all after:duration-300 group-hover:after:w-full">
+                                            Besoin d’un coup de pouce ?
+                                        </span>
+                                    </Link>
                                     <NavbarLink to="/events">
                                         <CalendarCheck className="inline-block mr-1 h-5 w-5"/>
                                         Évents
@@ -136,6 +147,14 @@ export const Navbar = () => {
                                                 > 
                                                     <UserCircle className="mr-2 h-4 w-4"/>
                                                     Mon profil
+                                                </Link>
+                                                <Link 
+                                                    to="/myHelpRequests"
+                                                    className="link"
+                                                    onClick = {() => setDropDownOpen(false)}
+                                                >
+                                                    <LifeBuoy className="mr-2 h-5 w-5" />
+                                                    Mes demandes d'aides
                                                 </Link>
                                                 <Link 
                                                     to="/settings" 
