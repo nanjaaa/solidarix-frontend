@@ -83,13 +83,28 @@ export function ChatBubbleAddressInput({
     };
 
 
+    /*
     const handleBlur = () => {
         // on peut conserver ou retirer ça selon besoin
         // ici on le garde pour valider à la sortie de champ
+        
         const parsed = parseManualAddress(input);
         if (parsed) {
             onChange(JSON.stringify(parsed));
         }
+    };
+    */
+
+    const handleBlur = () => {
+        // on peut conserver ou retirer ça selon besoin
+        // ici on le garde pour valider à la sortie de champ
+        setTimeout(() => {
+            const parsed = parseManualAddress(input);
+            if (parsed) {
+                onChange(JSON.stringify(parsed));
+            }
+            setSuggestions([]);
+        },100)       
     };
 
     const {

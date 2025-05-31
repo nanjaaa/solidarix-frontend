@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { ChatBubbleForm } from "./ChatFormBubble";
 import type { Address } from "../../hooks/UseAddressAutocomplete";
+import HelpTypeSummary from "../HelpRequestSummary/HelpTypeSummary";
+import HelpDescriptionSummary from "../HelpRequestSummary/HelpDescriptionSummary";
+import HelpDateTimeSummary from "../HelpRequestSummary/HelpDateTimeSummary";
+import HelpAddressSummary from "../HelpRequestSummary/HelpAddressSummary";
+import { helpTypeDescriptions } from "../../constants/helpDescription";
 
 type HelpRequestData = {
     helpType?: string;
@@ -34,11 +39,20 @@ const questions: { key: StepKey; label: string; placeholder?: string }[] = [
     },
 ];
 
+const helpTypeOptions = Object.entries(helpTypeDescriptions).map(
+    ([key, { label, icon }]) => ({
+        value: key, 
+        inputLabel: label,
+        label: `${icon} ${label}`, 
+    })
+);
+
 export default function HelpRequestForm() {
     const [step, setStep] = useState<number>(0);
     const currentQuestion = questions[step - 1];
     const [maxStepReached, setMaxStepReached] = useState<number>(0);
     const [editingStep, setEditingStep] = useState<number | null>(null);
+    const [isStepFinal, setIsStepFinal] = useState(false);
     const [formData, setFormData] = useState<HelpRequestData>({
         helpType    : "",
         description : "",
@@ -90,24 +104,41 @@ export default function HelpRequestForm() {
     const handleNext = () => {
         if (!isStepValid(step)) return;
         const nextStep = step + 1;
+
+        if (step === 4) {
+            setIsStepFinal(true);
+        }
+
         setMaxStepReached((prev) => Math.max(prev, nextStep));
-        setStep(nextStep);
+        setStep(maxStepReached);
         setEditingStep(null);
     };
 
     const handleEdit = (stepNumber: number) => {
         setEditingStep(stepNumber);
+        setIsStepFinal(false);
         setStep(stepNumber);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!isStepValid(maxStepReached)) {
-        alert("Veuillez compléter toutes les étapes avant de soumettre.");
-        return;
+            alert("Veuillez compléter toutes les étapes avant de soumettre.");
+            return;
         }
         console.log("Formulaire soumis :", formData);
         // ici tu peux appeler une API ou autre logique d'envoi
+    };
+
+    const isFormComplete = (): boolean => {
+        return (
+            !!formData.helpType?.trim() &&
+            !!formData.description?.trim() &&
+            !!formData.helpTime?.trim() &&
+            !!formData.location?.fullAddress?.trim() &&
+            !!formData.location?.city?.trim() &&
+            !!formData.location?.postalCode?.trim()
+        );
     };
 
     return (
@@ -141,19 +172,13 @@ export default function HelpRequestForm() {
                     onChange={(val) => setFormData({ ...formData, helpType: val })}
                     onSend={handleNext}
                     placeholder={currentQuestion?.placeholder || ""}
-                    options={["Courses", "Bricolage", "Garde d’enfants"]}
+                    options={helpTypeOptions}
                 />
                 ) : (
-                <div className="bg-gray-100 p-2 rounded flex justify-between items-center">
-                    <span>🛠 Type d’aide : {formData.helpType || "—"}</span>
-                    <button
-                        type="button"
-                        onClick={() => handleEdit(1)}
-                        className="text-sm text-blue-600 hover:underline"
-                    >
-                        Modifier
-                    </button>
-                </div>
+                    <HelpTypeSummary
+                        value={formData.helpType ?? "—"}
+                        onEdit={() => handleEdit(1)}
+                    />
                 )}
             </div>
             )}
@@ -173,16 +198,10 @@ export default function HelpRequestForm() {
                     placeholder={currentQuestion?.placeholder || ""}
                 />
                 ) : (
-                <div className="bg-gray-100 p-2 rounded flex justify-between items-center">
-                    <span>📝 Description : {formData.description || "—"}</span>
-                    <button
-                        type="button"
-                        onClick={() => handleEdit(2)}
-                        className="text-sm text-blue-600 hover:underline"
-                    >
-                        Modifier
-                    </button>
-                </div>
+                    <HelpDescriptionSummary
+                        value={formData.description ?? "—"}
+                        onEdit={() => handleEdit(2)}
+                    />
                 )}
             </div>
             )}
@@ -200,24 +219,10 @@ export default function HelpRequestForm() {
                     placeholder={currentQuestion?.placeholder || ""}
                 />
                 ) : (
-                <div className="bg-gray-100 p-2 rounded flex justify-between items-center">
-                    <span>
-                    🕓 Date et heure :{" "}
-                    {formData.helpTime
-                        ? new Date(formData.helpTime).toLocaleString("fr-FR", {
-                            dateStyle: "full",
-                            timeStyle: "short",
-                        })
-                        : "—"}
-                    </span>
-                    <button
-                        type="button"
-                        onClick={() => handleEdit(3)}
-                        className="text-sm text-blue-600 hover:underline"
-                    >
-                        Modifier
-                    </button>
-                </div>
+                <HelpDateTimeSummary
+                    dateTime={formData.helpTime ?? "—"}
+                    onEdit={() => handleEdit(3)}
+                />
                 )}
             </div>
             )}
@@ -252,25 +257,21 @@ export default function HelpRequestForm() {
                     placeholder={currentQuestion?.placeholder || ""}
                 />
                 ) : (
-                <div className="bg-gray-100 p-2 rounded flex justify-between items-center">
-                    <span>📍 Adresse : {formData.location?.fullAddress || "—"}</span>
-                    <button
-                        type="button"
-                        onClick={() => handleEdit(4)}
-                        className="text-sm text-blue-600 hover:underline"
-                    >
-                        Modifier
-                    </button>
-                </div>
+                    <HelpAddressSummary
+                        street={formData.location?.street ?? "—"}
+                        postalCode={formData.location?.postalCode ?? "—"}
+                        city={formData.location?.city ?? "—"}
+                        onEdit={() => handleEdit(3)}
+                    />
                 )}
             </div>
             )}
 
             {/* Bouton Envoyer visible seulement après la dernière étape validée */}
-            {maxStepReached >= 4 && editingStep === null && (
+            {maxStepReached >= 4 && editingStep === null && isFormComplete() &&  (
             <button
                 type="submit"
-                className="bg-primary-green text-white py-2 px-4 rounded hover:bg-green-700"
+                className="btn btn-base"
             >
                 Envoyer ma demande
             </button>

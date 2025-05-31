@@ -3,6 +3,12 @@ import { SendHorizontal } from "lucide-react";
 import { cn } from "../../utils/ClassNames";
 import { ChatBubbleAddressInput, isAddressValid } from "./ChatBubbleAddressInput";
 
+type helpTypeOption = {
+    value: string;
+    inputLabel: string
+    label: string;
+};
+
 interface ChatBubbleFormProps {
     question: string;
     type: "text" | "select" | "datetime" | "address";
@@ -10,7 +16,7 @@ interface ChatBubbleFormProps {
     onChange: (value: string) => void;
     onSend: () => void;
     placeholder: string;
-    options?: string[];
+    options?: helpTypeOption[];
 }
 
 
@@ -58,16 +64,19 @@ export function ChatBubbleForm({
 
 
     const isValid = () => {
+
         if (type === "text") return value.trim().length > 0;
-        if (type === "select") return options.includes(value);
+
+        if (type === "select") 
+            return options.some(option => option.value === value);
+
         if (type === "datetime") {
             const date = new Date(value);
             return !isNaN(date.getTime());
         }
+
         if (type === "address") {
-            const matchi =  isAddressValid(value);
-            console.log(matchi)
-            return matchi
+            return isAddressValid(value);
         }
 
         return false
@@ -79,6 +88,7 @@ export function ChatBubbleForm({
         setSelected(option);
     };
 
+    const selectedOption = options.find(opt => opt.value === value);
 
     return (
         <div className="card flex flex-col py-2 px-2">
@@ -107,7 +117,7 @@ export function ChatBubbleForm({
                     <input
                         type="text"
                         ref={inputRef}
-                        value={value}
+                        value={selectedOption ? selectedOption.inputLabel : ""}
                         onChange={(e) => onChange(e.target.value)}                    
                         placeholder={placeholder}
                         className="order-2 bg-background-ow outline-none px-4 py-2 rounded-bl-3xl rounded-tr-3xl rounded-tl-3xl shadow-inner border border-gray-300"
@@ -151,20 +161,20 @@ export function ChatBubbleForm({
 
             {/* Bulles options visibles en permanence */}
             {type === "select" && options.length > 0 && (
-            <div className="self-center flex flex-wrap gap-2">
+            <div className="inline-flex flex-wrap gap-2 mx-auto max-w-fit">
                 {options.map((option) => (
                 <button
-                    key={option}
+                    key={option.label}
                     type="button"
-                    onClick={() => handleSelect(option)}
+                    onClick={() => handleSelect(option.value)}
                     className={cn(
                         "px-3 py-1 rounded-full border text-sm transition-colors",
-                        value === option
+                        value === option.value
                             ? "bg-primary-green text-white border-primary-green"
                             : "bg-muted text-gray-700 hover:bg-primary-green hover:text-white"
                     )}
                 >
-                    {option}
+                    {option.label}
                 </button>
                 ))}
             </div>

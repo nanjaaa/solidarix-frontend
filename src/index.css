@@ -51,3 +51,10 @@ body {
 
 }
 
+/* Ajout de la police manuscrite */
+@layer utilities {
+  .font-handwriting {
+    font-family: 'Reenie Beanie', cursive;
+  }
+}
+

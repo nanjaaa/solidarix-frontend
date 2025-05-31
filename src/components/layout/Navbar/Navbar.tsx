@@ -49,6 +49,7 @@ export const Navbar = () => {
 
     return (
         <header className="top-0 z-50">
+
             <div className="container mx-auto m-3 mb-0 px-6 flex items-center justify-between">
 
                 {/*partie gauche - Logo - Texte*/}
