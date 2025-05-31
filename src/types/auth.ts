@@ -1,4 +1,4 @@
-import type { Address } from "../components/form/AdressAutocomplete";
+import type { Address } from "../hooks/UseAddressAutocomplete";
 
 export interface AuthRequestDto {
   username: string;

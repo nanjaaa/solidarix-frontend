@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { SendHorizontal } from "lucide-react";
-import { cn } from "../../utils/ClassNames";
+import { cn } from "../../../utils/ClassNames";
 import { ChatBubbleAddressInput, isAddressValid } from "./ChatBubbleAddressInput";
 
 type helpTypeOption = {
@@ -34,7 +34,6 @@ export function ChatBubbleForm({
     const inputRef = useRef<HTMLInputElement>(null);
     const [inputWidth, setInputWidth] = useState("150px");
     const [selected, setSelected] = useState<string>("");
-    const [addressRaw, setAddressRaw] = useState("");
 
     useEffect(() => {
         const updateWidth = () => {

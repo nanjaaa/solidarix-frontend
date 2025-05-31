@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { ChatBubbleForm } from "./ChatFormBubble";
-import type { Address } from "../../hooks/UseAddressAutocomplete";
-import HelpTypeSummary from "../HelpRequestSummary/HelpTypeSummary";
-import HelpDescriptionSummary from "../HelpRequestSummary/HelpDescriptionSummary";
-import HelpDateTimeSummary from "../HelpRequestSummary/HelpDateTimeSummary";
-import HelpAddressSummary from "../HelpRequestSummary/HelpAddressSummary";
-import { helpTypeDescriptions } from "../../constants/helpDescription";
+import type { Address } from "../../../hooks/UseAddressAutocomplete";
+import HelpTypeSummary from "../../HelpRequestSummary/HelpTypeSummary";
+import HelpDescriptionSummary from "../../HelpRequestSummary/HelpDescriptionSummary";
+import HelpDateTimeSummary from "../../HelpRequestSummary/HelpDateTimeSummary";
+import HelpAddressSummary from "../../HelpRequestSummary/HelpAddressSummary";
+import { helpTypeDescriptions } from "../../../constants/helpDescription";
 
 type HelpRequestData = {
     helpType?: string;
@@ -101,23 +101,34 @@ export default function HelpRequestForm() {
         }
     };
 
+
     const handleNext = () => {
         if (!isStepValid(step)) return;
-        const nextStep = step + 1;
 
-        if (step === 4) {
+        // On met à jour l'étape maximale atteinte si besoin
+        const newMaxStep = Math.max(maxStepReached, step + 1);
+        setMaxStepReached(newMaxStep);
+
+        if (newMaxStep > 4) {
             setIsStepFinal(true);
+            setEditingStep(null);
+            return;
         }
-
-        setMaxStepReached((prev) => Math.max(prev, nextStep));
-        setStep(maxStepReached);
-        setEditingStep(null);
-    };
+       
+        setStep(newMaxStep);
+        setEditingStep(newMaxStep);
+    }; 
 
     const handleEdit = (stepNumber: number) => {
+
+        // Si le dernier champ quand a atteint n'est pas présentable, considérer comme si on ne l'a jamais atteint
+        if(!isStepValid(maxStepReached)){
+            setMaxStepReached((prev) => Math.max(prev - 1,1));
+        }
+
         setEditingStep(stepNumber);
-        setIsStepFinal(false);
         setStep(stepNumber);
+        setIsStepFinal(false);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -149,22 +160,30 @@ export default function HelpRequestForm() {
             </h2>
 
             {step === 0 && (
-            <button
-                type="button"
-                onClick={() => {
-                setStep(1);
-                setMaxStepReached(1);
+            <div className="flex flex-col items-center text-center gap-4 my-8">
+                <p className="text-secondary-lightgray text-lg max-w-xl">
+                    Bonjour, <br />
+                    Nous allons vous guider pas à pas pour formuler votre demande d’aide.
+                    Cela ne prendra que quelques instants. Cliquez sur le bouton ci-dessous
+                    pour commencer.
+                </p>
+                <button
+                    type="button"
+                    onClick={() => {
+                        setStep(1);
+                        setMaxStepReached(1);
                 }}
-                className="bg-primary-green text-white py-2 px-4 rounded hover:bg-green-700"
-            >
+                className="btn btn-base animate-float"
+                >
                 Commencer
-            </button>
+                </button>
+            </div>
             )}
 
             {/* Étape 1 - Type d’aide */}
             {maxStepReached >= 1 && (
             <div className="my-4">
-                {step === 1 || editingStep === 1 ? (
+                {(step === 1 || editingStep === 1) && !isStepFinal ? (
                 <ChatBubbleForm
                     question={currentQuestion?.label ?? ""}
                     type="select"
@@ -186,7 +205,7 @@ export default function HelpRequestForm() {
             {/* Étape 2 - Description */}
             {maxStepReached >= 2 && (
             <div className="my-4">
-                {step === 2 || editingStep === 2 ? (
+                {(step === 2 || editingStep === 2) && !isStepFinal ? (
                 <ChatBubbleForm
                     question={currentQuestion?.label ?? ""}
                     type="text"
@@ -209,7 +228,7 @@ export default function HelpRequestForm() {
             {/* Étape 3 - Moment de l’aide */}
             {maxStepReached >= 3 && (
             <div className="my-4">
-                {step === 3 || editingStep === 3 ? (
+                {(step === 3 || editingStep === 3) && !isStepFinal ? (
                 <ChatBubbleForm
                     question={currentQuestion?.label ?? ""}
                     type="datetime"
@@ -230,7 +249,7 @@ export default function HelpRequestForm() {
             {/* Étape 4 - Adresse */}
             {maxStepReached >= 4 && (
             <div className="my-4">
-                {step === 4 || editingStep === 4 ? (
+                {(step === 4 || editingStep === 4) && !isStepFinal ? (
                 <ChatBubbleForm
                     question={currentQuestion?.label ?? ""}
                     type="address"
@@ -261,7 +280,7 @@ export default function HelpRequestForm() {
                         street={formData.location?.street ?? "—"}
                         postalCode={formData.location?.postalCode ?? "—"}
                         city={formData.location?.city ?? "—"}
-                        onEdit={() => handleEdit(3)}
+                        onEdit={() => handleEdit(4)}
                     />
                 )}
             </div>

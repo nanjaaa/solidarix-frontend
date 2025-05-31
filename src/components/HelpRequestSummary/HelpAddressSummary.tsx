@@ -15,7 +15,7 @@ const HelpAddressSummary: React.FC<HelpAddressSummaryProps> = ({ street, postalC
             <div className="flex flex-col flex-grow">
 
                 <div className="flex justify-between mb-3">
-                    <p className="text-md text-secondary-lightgray font-semibold tracking-wide">
+                    <p className="text-sm text-secondary-lightgray font-semibold tracking-wide">
                         Où aura lieu l'entraide?
                     </p>
 

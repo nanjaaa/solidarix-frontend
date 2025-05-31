@@ -29,7 +29,7 @@ const HelpDateTimeSummary: React.FC<HelpDateTimeSummaryProps> = ({ dateTime, onE
             <div className="flex flex-col flex-grow">
 
                 <div className="flex justify-between mb-3">
-                    <p className="text-md text-secondary-lightgray font-semibold tracking-wide">
+                    <p className="text-sm text-secondary-lightgray font-semibold tracking-wide">
                         Quand as-tu besoin d'aide?
                     </p>
 

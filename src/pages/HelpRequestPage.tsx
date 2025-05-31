@@ -1,4 +1,4 @@
-import HelpRequestForm from "../components/form/HelpRequestForm";
+import HelpRequestForm from "../components/form/helpRequestForm/HelpRequestForm";
 import LoginIllustration from '@assets/login_illustration.png'
 
 

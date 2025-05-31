@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import type { Address } from "../../hooks/UseAddressAutocomplete";
-import { AddressSuggestionList } from "./AddressSuggestionList";
-import { useKeyboardNavigation } from "../../hooks/UseKeyBoardNavigation";
+import type { Address } from "../../../hooks/UseAddressAutocomplete";
+import { AddressSuggestionList } from "../AddressSuggestionList";
+import { useKeyboardNavigation } from "../../../hooks/UseKeyBoardNavigation";
 
 interface ChatBubbleAddressInputProps {
     value: string; // JSON.stringify(Address)
