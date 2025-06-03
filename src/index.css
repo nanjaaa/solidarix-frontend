@@ -55,7 +55,15 @@ body {
   }
 
   .card-md {
-    @apply rounded-2xl p-3 border-2 border-primary-darkblue space-y-4 bg-x-white;
+    @apply rounded-2xl p-3 border-3 border-primary-darkblue space-y-4 bg-x-white;
+  }
+
+  .commentInput{
+    @apply rounded-2xl border-2 border-primary-darkblue bg-background-ow py-1 px-3;
+  }
+
+  .commentThread{
+    @apply rounded-3xl bg-background-ow py-1 px-3;
   }
 
 }

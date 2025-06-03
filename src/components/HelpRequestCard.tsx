@@ -1,26 +1,15 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { HelpRequest } from "../types/helpRequest";
 import usersMock from "../data/usersMock";
-import { Heart, MessageCircle, Share2, SquareArrowDownRightIcon, SquareArrowOutUpRight } from "lucide-react";
+import { Heart, MessageCircle, SendHorizontal, Share2, SquareArrowDownRightIcon, SquareArrowOutUpRight } from "lucide-react";
+import CommentInput from "./comment/CommentInput";
+import { timeAgo } from "../utils/timeAgo";
+import CommentThread from "./comment/CommentThread";
 
 type Props = {
     helpRequest: HelpRequest;
+    onAddComment: (content: string, parentCommentId?: number) => void;
 };
-
-function timeAgo(dateString: string): string {
-    const date = new Date(dateString);
-    const now = new Date();
-
-    const diffMs = now.getTime() - date.getTime();
-    const diffMinutes = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffHours / 24);
-
-    if (diffMinutes < 1) return "À l’instant";
-    if (diffMinutes < 60) return `Il y a ${diffMinutes} min`;
-    if (diffHours < 24) return `Il y a ${diffHours} h`;
-    return `Il y a ${diffDays} j`;
-}
 
 function formatDate(dateString: string): string {
     const date = new Date(dateString);
@@ -34,7 +23,7 @@ function formatDate(dateString: string): string {
     });
 }
 
-export default function HelpRequestCard({ helpRequest }: Props) {
+export default function HelpRequestCard({ helpRequest, onAddComment }: Props) {
     const [showComments, setShowComments] = useState(false);
 
     // Phrase introductive selon category
@@ -58,9 +47,10 @@ export default function HelpRequestCard({ helpRequest }: Props) {
 
     const author = usersMock.find((u) => u.id === helpRequest.authorId);
     const avatarUrl = author?.avatarUrl ?? "";
+    const [replyingToId, setReplyingToId] = useState<number | null>(null);
 
     return (
-        <div className="flex justify-center my-5">
+        <div className="flex justify-center my-10">
             <div className="card-md w-full max-w-[50%]">
 
                 {/* Header: avatar + nom + ville + âge publication */}
@@ -86,7 +76,10 @@ export default function HelpRequestCard({ helpRequest }: Props) {
             <div className="my-5 px-3 text-primary-darkblue font-semibold whitespace-pre-line">{helpRequest.description}</div>
 
             {/* Action bar */}
-            <div className="flex justify-between border-t pt-2 text-primary-darkblue text-sm px-10">
+            <div className={`flex justify-between border-t pt-2 text-primary-darkblue text-sm px-10 ${
+                                showComments ? "border-b  pb-2" : "pb-0"
+                            }`}
+            >
 
                 <button
                     type="button"
@@ -131,59 +124,19 @@ export default function HelpRequestCard({ helpRequest }: Props) {
             {showComments && (
             <div
                 id={`comments-section-${helpRequest.id}`}
-                className="mt-3 border-t pt-3 space-y-3 max-h-64 overflow-y-auto"
+                className="space-y-3 max-h-64 overflow-y-auto"
             >
-                {helpRequest.comments.length === 0 ? (
-                <div className="text-gray-500 text-sm italic">Aucun commentaire pour le moment.</div>
-                ) : (
-                helpRequest.comments.map((comment) => {
-                    const commentAuthor = usersMock.find(u => u.id === comment.authorId);
-                    const commentAvatarUrl = commentAuthor?.avatarUrl ?? "/img/default-avatar.png";
+                <div className="mx-3">
+                    <CommentInput />
 
-                    return (
-                    <div key={comment.id}>
-                        <div className="flex items-start gap-2">
-                        <img
-                            src={commentAvatarUrl}
-                            alt={`Avatar de ${commentAuthor?.name ?? "utilisateur inconnu"}`}
-                            className="w-8 h-8 rounded-full object-cover mt-1"
-                        />
-                        <div className="bg-gray-100 rounded-md p-2 flex-1">
-                            <div className="font-semibold text-sm">{commentAuthor?.name ?? "Utilisateur inconnu"}</div>
-                            <div className="text-xs text-gray-500 mb-1 italic">{timeAgo(comment.createdAt)}</div>
-                            <div>{comment.content}</div>
-                        </div>
-                        </div>
+                    <CommentThread
+                        comments={helpRequest.comments}
+                        onAddComment={onAddComment}
+                        replyingToId={replyingToId}
+                        setReplyingToId={setReplyingToId}
+                    />
+                </div>
 
-                        {/* Replies niveau 2 */}
-                        {comment.replies && comment.replies.length > 0 && (
-                        <div className="ml-10 mt-1 space-y-1">
-                            {comment.replies.map((reply) => {
-                                const replyAuthor = usersMock.find(u => u.id === reply.authorId);
-                                const replyAvatarUrl = replyAuthor?.avatarUrl ?? "/img/default-avatar.png";
-
-                                return (
-                                    <div key={reply.id} className="flex items-start gap-2">
-                                    <img
-                                        src={replyAvatarUrl}
-                                        alt={`Avatar de ${replyAuthor?.name ?? "utilisateur inconnu"}`}
-                                        className="w-6 h-6 rounded-full object-cover mt-1"
-                                    />
-                                    <div className="bg-gray-200 rounded-md p-2 flex-1 text-sm">
-                                        <div className="font-semibold">{replyAuthor?.name ?? "Utilisateur inconnu"}</div>
-                                        <div className="text-xs text-gray-500 mb-1 italic">{timeAgo(reply.createdAt)}</div>
-                                        <div>{reply.content}</div>
-                                    </div>
-                                    </div>
-                                );
-                        
-                            })}
-                        </div>
-                        )}
-                    </div>
-                    );
-                })
-                )}
             </div>
             )}
 
