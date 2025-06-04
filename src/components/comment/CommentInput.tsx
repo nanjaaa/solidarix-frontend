@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { SendHorizontal, X } from "lucide-react";
+import { useAutoResizeTextarea } from "../../hooks/UseZutoResizeTextarea";
 
 type Props = {
     onSend?: (text: string) => void;
@@ -7,7 +8,7 @@ type Props = {
 
 export default function CommentInput( { onSend } : Props ) {
     const [value, setValue] = useState("");
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const textareaRef = useAutoResizeTextarea(value, 3);
     const [showSendButton, setShowSendButton] = useState(false);
 
     const handleInput = () => {

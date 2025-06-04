@@ -5,6 +5,7 @@ import { Heart, MessageCircle, SendHorizontal, Share2, SquareArrowDownRightIcon,
 import CommentInput from "./comment/CommentInput";
 import { timeAgo } from "../utils/timeAgo";
 import CommentThread from "./comment/CommentThread";
+import HelpOfferModal from "./HelpOfferModal";
 
 type Props = {
     helpRequest: HelpRequest;
@@ -25,6 +26,7 @@ function formatDate(dateString: string): string {
 
 export default function HelpRequestCard({ helpRequest, onAddComment }: Props) {
     const [showComments, setShowComments] = useState(false);
+    const [isModalOpen, setModalOpen] = useState(false);
 
     // Phrase introductive selon category
     let introPhrase = "";
@@ -113,12 +115,21 @@ export default function HelpRequestCard({ helpRequest, onAddComment }: Props) {
                 <button
                     type="button"
                     className="btn btn-base"
-                    onClick={() => ""}
+                    onClick={() => setModalOpen(true)}
                 >
                     Se proposer
                 </button>
 
             </div>
+
+            <HelpOfferModal
+                isOpen={isModalOpen}
+                onClose={() => setModalOpen(false)}
+                onSubmit={(message) => {
+                    // logique d'envoi de la proposition ici
+                    console.log("Message envoyé :", message);
+                }}
+            />
 
             {/* Commentaires */}
             {showComments && (

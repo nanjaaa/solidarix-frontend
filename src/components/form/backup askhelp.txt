@@ -1,98 +1,288 @@
-import React, { useState, useEffect, useRef } from "react";
-import { SendHorizontal } from "lucide-react";
-import { cn } from "../../utils/ClassNames";
+import { useState } from "react";
+import { ChatBubbleForm } from "./ChatFormBubble";
+import type { Address } from "../../hooks/UseAddressAutocomplete";
 
-interface ChatBubbleFormProps {
-    question: string;
-    type: "text" | "select";
-    value: string;
-    onChange: (value: string) => void;
-    onSend: () => void;
-    options?: string[];
+type HelpRequestData = {
+    helpType?: string;
+    description?: string;
+    helpTime?: string;
+    location?: Address
 }
 
+type StepKey = "helpType" | "description" | "location" | "helpTime";
 
-export const ChatBubbleForm: React.FC<ChatBubbleFormProps> = ({
-    question,
-    type,
-    value,
-    onChange,
-    onSend,
-    options = [],
-    }) => {
-        const [filteredOptions, setFilteredOptions] = useState<string[]>([]);
-        const [selected, setSelected] = useState<string>("");
+const questions: { key: StepKey; label: string; placeholder?: string }[] = [
+    { 
+        key: "helpType", 
+        label: "Quel type d’aide recherchez-vous ?", 
+        placeholder: "Choisissez parmi les options ci-dessous..." 
+    },
+    { 
+        key: "description", 
+        label: "Pourriez-vous dire un peu plus sur votre besoin :) ?", 
+        placeholder: "Présentez-vous et décrivez en détail vote besoin...." 
+    },
+    { 
+        key: "helpTime", 
+        label : "Indiquez-nous le moment qui vous conviendrait le mieux pour recevoir de l’aide", 
+        placeholder: "Sélectionnez un crénau..."},
+    { 
+        key: "location", 
+        label: "Pouvez-vous indiquer l'adresse complète où aura lieu l'entraide ?",
+        placeholder: "Ex : 12 rue des Fleurs, 75000 Paris"
+    },
+];
 
-        useEffect(() => {
-        if (type === "select" && value) {
-            const filtered = options.filter((opt) =>
-            opt.toLowerCase().startsWith(value.toLowerCase())
-            );
-            setFilteredOptions(filtered);
-        } else {
-            setFilteredOptions([]);
-        }
-        }, [value, options, type]);
+export default function HelpRequestForm() {
+    const [step, setStep] = useState<number>(0);
+    const currentQuestion = questions[step-1];
+    const [maxStepReached, setMaxStepReached] = useState<number>(0);
+    const [formData, setFormData] = useState<HelpRequestData>({
+        helpType: "",
+        description: "",
+        helpTime: "",
+        location: {
+            number: 0,
+            streetName: "",
+            street: "",
+            postalCode: "",
+            city: "",
+            latitude: "",
+            longitude: "",
+            fullAddress: "",
+        },
+    });
 
-        const isValid = () => {
-        if (type === "text") return value.trim().length > 0;
-        if (type === "select") return options.includes(value);
-        return false;
-        };
+    const [editingStep, setEditingStep] = useState<number | null>(null);
 
-        const handleSelect = (option: string) => {
-        onChange(option);
-        setSelected(option);
-        };
-
-    return (
-    <div className="card flex flex-col py-2 px-2">
-        {/* Question Bubble */}
-        <div className="self-start bg-primary-green text-white px-4 py-2 rounded-br-3xl rounded-tl-3xl rounded-tr-3xl max-w-[60%] shadow-md select-none">
-        {question}
-        </div>
-
-        {/* Input & Send */}
-        <div className="self-end flex items-center gap-2 min-w-[150px] max-w-[50%] mt-2">
-            <input
-                type="text"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                placeholder={type === "select" ? "Choisissez parmis les options ci-dessous..." : "Tapez votre réponse..."}
-                className="bg-background-ow outline-none flex-grow px-4 py-2 rounded-bl-3xl rounded-tr-3xl rounded-tl-3xl shadow-inner border border-gray-300 min-w-0"
-            />
-
-            {isValid() && (
-                <button
-                type="button"
-                onClick={onSend}
-                className="text-primary-green hover:text-hover-green transition-colors"
-                >
-                <SendHorizontal className="w-7 h-7" />
-                </button>
-            )}
-        </div>
-
-        {/* Selectable Options */}
-        {type === "select" && options.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-2 self-end max-w-[400px]">
-            {options.map((option) => (
-            <button
-                key={option}
-                type="button"
-                onClick={() => handleSelect(option)}
-                className={cn(
-                "px-3 py-1 rounded-full border text-sm transition-colors",
-                value === option
-                    ? "bg-primary-green text-white border-primary-green"
-                    : "bg-muted text-gray-700 hover:bg-primary-green hover:text-white"
-                )}
-            >
-                {option}
-            </button>
-            ))}
-        </div>
-        )}
-    </div>
-    );
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    ) => {
+            const { name, value } = e.target;
+            setFormData((prev) => ({
+                ...prev,
+                [name]: value,
+        }));
     };
+
+    const handleLocationChange = (location: Address) => {
+        setFormData((prev) => ({
+            ...prev,
+            location,
+        }));
+    };
+
+    const isStepValid = (currentStep: number): boolean => {
+        switch (currentStep) {
+            case 1:
+            return !!formData.helpType?.trim();
+            case 2:
+            return !!formData.description?.trim();
+            case 3:
+            return !!formData.helpTime?.trim();
+            case 4:
+            return !!formData.location?.fullAddress?.trim();
+            default:
+            return true;
+        }
+    };
+
+    const handleNext = () => {
+        if (!isStepValid(step)) return;
+        const nextStep = Math.max(maxStepReached,step + 1);
+        setMaxStepReached(() => nextStep);
+        setStep(nextStep);
+        setEditingStep(null);
+    };
+
+    const handleEdit = (stepNumber: number) => {
+        setEditingStep(stepNumber);
+        setStep(stepNumber);
+    };
+    
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        console.log("Formulaire soumis :", formData);
+    };
+
+  return (
+    <div className="card w-[800px]">
+        <form
+            onSubmit={handleSubmit}
+            className=""
+        >
+        <h2 className="text-xl font-semibold text-primary-darkblue">
+            Demande d’aide
+        </h2>
+
+        {step === 0 && (
+            <button
+            type="button"
+            onClick={handleNext}
+            className="bg-primary-green text-white py-2 px-4 rounded hover:bg-green-700"
+            >
+            Commencer
+            </button>
+        )}
+
+        {/* Étape 1 - Type d’aide */}
+        {maxStepReached >= 1 && (
+            <div className="my-4">
+            {/*<label className="block text-sm font-medium text-primary-darkblue">
+                Quel type d’aide recherchez-vous ?
+            </label>*/}
+            {step === 1 || editingStep === 1 ? (
+                
+                <ChatBubbleForm
+                    question={currentQuestion.label}
+                    type="select"
+                    value={formData.helpType ?? ""}
+                    onChange={(val) => setFormData({ ...formData, helpType: val })}
+                    onSend={handleNext}
+                    placeholder={currentQuestion.placeholder || ""}
+                    options={["Courses", "Bricolage", "Garde d’enfants"]}
+                />
+                       
+            ) : (
+                <div className="bg-gray-100 p-2 rounded flex justify-between items-center">
+                    <span>🛠 Type d’aide : {formData.helpType || "—"}</span>
+                    <button
+                        type="button"
+                        onClick={() => handleEdit(1)}
+                        className="text-sm text-blue-600 hover:underline"
+                    >
+                        Modifier
+                    </button>
+                </div>
+            )}
+            </div>
+        )}
+
+        {/* Étape 2 */}
+        {maxStepReached >= 2 && (
+            <div className="my-4">
+            {step === 2 || editingStep === 2 ? (
+                
+                <ChatBubbleForm
+                    question={currentQuestion.label}
+                    type="text"
+                    value={formData.description ?? ""}
+                    onChange={(val) => setFormData({ ...formData, description: val })}
+                    onSend={handleNext}
+                    placeholder={currentQuestion.placeholder || ""}
+                />
+
+            ) : (
+                <div className="bg-gray-100 p-2 rounded flex justify-between items-center">
+                <span>📝 Description : {formData.description || "—"}</span>
+                <button
+                    type="button"
+                    onClick={() => handleEdit(2)}
+                    className="text-sm text-blue-600 hover:underline"
+                >
+                    Modifier
+                </button>
+                </div>
+            )}
+            </div>
+        )}
+
+        {/* Étape 3 */}
+        {maxStepReached >= 3 && (
+            <div className="my-4">
+            {step === 3 || editingStep === 3 ? (
+                <>
+                <ChatBubbleForm
+                    question={currentQuestion.label}
+                    type="datetime"
+                    value={formData.helpTime ?? ""}
+                    onChange={(val) => setFormData({ ...formData, helpTime: val })}
+                    onSend={handleNext}
+                    placeholder={currentQuestion.placeholder || ""}
+                />
+                </>
+            ) : (
+                <div className="bg-gray-100 p-2 rounded flex justify-between items-center">
+                <span>
+                    🕓 Date et heure :{" "}
+                    {formData.helpTime
+                    ? new Date(formData.helpTime).toLocaleString("fr-FR", {
+                        dateStyle: "full",
+                        timeStyle: "short",
+                        })
+                    : "—"}
+                </span>
+                <button
+                    type="button"
+                    onClick={() => handleEdit(3)}
+                    className="text-sm text-blue-600 hover:underline"
+                >
+                    Modifier
+                </button>
+                </div>
+            )}
+            </div>
+        )}
+
+
+        {/* Étape 4 */}
+        {maxStepReached >= 4 && (
+            <div className="my-4">
+                {step === 4 || editingStep === 4 ? (
+                    <ChatBubbleForm
+                        question={currentQuestion.label}
+                        type="address"
+                        value={formData.location?.fullAddress ?? ""}
+                        onChange={(val) => {
+                            try {
+                                const parsed = JSON.parse(val);
+                                handleLocationChange(parsed);
+                            } catch {
+                                // En cas d'erreur, on stocke une adresse avec uniquement fullAddress
+                                handleLocationChange({
+                                    number: 0,
+                                    streetName: "",
+                                    street: "",
+                                    postalCode: "",
+                                    city: "",
+                                    latitude: "",
+                                    longitude: "",
+                                    fullAddress: val,
+                                });
+                            }
+                        }}
+                        onSend={handleNext}
+                        placeholder={currentQuestion.placeholder || ""}
+                    />
+                ) : (
+                    <div className="bg-gray-100 p-2 rounded flex justify-between items-center">
+                        <span>📍 Adresse : {formData.location?.fullAddress || "—"}</span>
+                        <button
+                            type="button"
+                            onClick={() => handleEdit(4)}
+                            className="text-sm text-blue-600 hover:underline"
+                        >
+                            Modifier
+                        </button>
+                    </div>
+                )}
+            </div>
+        )}
+
+
+        {maxStepReached >= 4 && editingStep === null && (
+            <button
+                type="submit"
+                className="bg-primary-green text-white py-2 px-4 rounded hover:bg-green-700"
+            >
+            Envoyer ma demande
+            </button>
+        )}
+
+        <pre className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+            Debug: {JSON.stringify(formData, null, 2)}
+        </pre>
+        </form>
+    </div>
+  );
+}
