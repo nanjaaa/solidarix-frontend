@@ -75,6 +75,7 @@ export function ChatBubbleForm({
         }
 
         if (type === "address") {
+            console.log("addresse : " + value);
             return isAddressValid(value);
         }
 

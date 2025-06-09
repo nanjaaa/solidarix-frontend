@@ -5,7 +5,11 @@ import { timeAgo } from "../../utils/timeAgo";
 
 export interface Comment {
     id: number;
-    authorId: number;
+    author: {
+        id: number;
+        firstName: string;
+        lastName: string;
+    };
     content: string;
     createdAt: string;
     replies?: Comment[];
@@ -21,6 +25,11 @@ interface CommentThreadProps {
 
 export default function CommentThread({ comments, onAddComment, parentId, replyingToId, setReplyingToId }: CommentThreadProps) {
 
+    const handleReplySubmit = (content: string, parentId: number) => {
+        onAddComment(content, parentId);
+        setReplyingToId(null);
+    };
+
     return (
         <div className={parentId ? "ml-10 mt-2 space-y-3" : "space-y-0"}>
             {comments.length === 0 && !parentId && (
@@ -28,8 +37,7 @@ export default function CommentThread({ comments, onAddComment, parentId, replyi
             )}
 
             {comments.map((comment) => {
-                const author = usersMock.find((u) => u.id === comment.authorId);
-                const avatarUrl = author?.avatarUrl ?? "/img/default-avatar.png";
+                const avatarUrl = `https://api.dicebear.com/6.x/lorelei/svg?seed=${comment.author.id}`;
 
                 return (
                     <div key={comment.id} className="mt-3">
@@ -38,14 +46,16 @@ export default function CommentThread({ comments, onAddComment, parentId, replyi
                             <div className="flex items-start mt-3">   
                                 <img
                                     src={avatarUrl}
-                                    alt={`Avatar de ${author?.name ?? "utilisateur inconnu"}`}
+                                    alt={`Avatar de ${comment.author.firstName} ?? "utilisateur inconnu"}`}
                                     className={parentId ? "w-6 h-6 rounded-full object-cover mt-1" : "w-8 h-8 rounded-full object-cover mt-1"}
                                 />
                                 <div className={parentId ? "commentThread rounded-xl p-2 flex-1 text-sm" : "commentThread rounded-xl p-2 flex-1"}>
 
                                     <div className="flex justify-between items-start w-full">
 
-                                        <div className="font-semibold">{author?.name ?? "Utilisateur inconnu"}</div>
+                                        <div className="font-semibold">
+                                            {comment.author.firstName ?? "Utilisateur inconnu"} {comment.author.lastName}
+                                        </div>
                                         <div className="text-xs text-gray-500 mb-1 italic">{timeAgo(comment.createdAt)}</div>
 
                                     </div>
@@ -58,10 +68,8 @@ export default function CommentThread({ comments, onAddComment, parentId, replyi
                                 {replyingToId === comment.id && (
                                 <div className="mt-2">
                                     <CommentInput
-                                        onSend={(text) => {
-                                            onAddComment(text, comment.id);
-                                            setReplyingToId(null);
-                                        }}
+                                        onSubmit={(content) => handleReplySubmit(content, comment.id)}
+                                        disabled={false}
                                     />
                                 </div>
                                 )}

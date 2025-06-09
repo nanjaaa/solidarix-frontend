@@ -1,26 +1,51 @@
+import type { Address } from "../hooks/UseAddressAutocomplete";
+
 export type User = {
     id: number;
     name: string;
     avatarUrl: string;
 };
 
+export type UserSimpleDto = {
+    id: number;
+    firstName: string;
+    lastName: string;
+};
+
+
 export type Comment = {
     id: number;
-    authorId: number;
+    author: {
+        id: number;
+        firstName: string;
+        lastName: string;
+    };
     content: string;
-    createdAt: string; // ISO
-    replies?: Comment[]; // réponses niveau 2, pas plus
+    createdAt: string;
+    replies?: Comment[];
 };
 
-export type HelpRequest = {
+export type PrivateHelpRequestDto = {
     id: number;
-    authorId: number;
+    requester: UserSimpleDto; // ⚠️ remplacer authorId
     category: string;
     description: string;
-    helpDate: string; // ISO
-    createdAt: string; //ISO
-    city: string;
+    helpDate: string;
+    createdAt: string;
+    status: string;
+    postalSummary: string;
     comments: Comment[];
+    address: Address
 };
 
-    
+export type PublicHelpRequestDto = {
+    id: number;
+    requester: UserSimpleDto; // ⚠️ remplacer authorId
+    category: string;
+    description: string;
+    helpDate: string;
+    createdAt: string;
+    status: string;
+    postalSummary: string;
+    comments: Comment[];
+};

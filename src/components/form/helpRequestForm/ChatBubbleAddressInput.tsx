@@ -69,17 +69,16 @@ export function ChatBubbleAddressInput({
         const rawValue = e.target.value;
         setInput(rawValue);
 
-        const regex = /^\s*(\d{1,4}(?:\s?(?:bis|ter|quater))?)?\s+([A-Za-zÀ-ÿ\d\s'\-\.]+?)\s*,?\s*(\d{5})\s*,?\s*([A-Za-zÀ-ÿ\d\s'\-\.]+)\s*$/u;
-        if (regex.test(rawValue)) {
-            const parsed = parseManualAddress(rawValue);
-            if (parsed) {
-                onChange(JSON.stringify(parsed)); // mode manuel avec adresse complète valide
-                return;
-            }
-        }
+        const parsed = parseManualAddress(rawValue);
 
-        // Sinon, on reste en mode manuel brut
-        onChange(""); // vide l'adresse
+        if (parsed) {
+            // si c'est valide : tout l'objet est reconstruit avec les champs corrects
+            onChange(JSON.stringify(parsed));
+        } else {
+            // sinon, on garde un objet partiel avec juste fullAddress
+            onChange(JSON.stringify({ fullAddress: rawValue }));
+        }
+        
     };
 
 

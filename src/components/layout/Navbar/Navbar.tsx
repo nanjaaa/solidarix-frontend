@@ -5,6 +5,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { useEffect, useRef, useState } from "react";
 import { CalendarCheck, HandHelping, LifeBuoy, MessageCircle, Settings2, User, UserCircle } from "lucide-react";
 import { TbLogout2 } from "react-icons/tb";
+import { logout } from "../../../services/authService";
 
 export const Navbar = () => {
 
@@ -22,6 +23,7 @@ export const Navbar = () => {
         localStorage.removeItem("token");
         setIsAuthenticated(false);
         setDropDownOpen(false);
+        logout();
         navigate("/");
     }
 

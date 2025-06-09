@@ -6,19 +6,20 @@ import HelpDescriptionSummary from "../../HelpRequestSummary/HelpDescriptionSumm
 import HelpDateTimeSummary from "../../HelpRequestSummary/HelpDateTimeSummary";
 import HelpAddressSummary from "../../HelpRequestSummary/HelpAddressSummary";
 import { helpTypeDescriptions } from "../../../constants/helpDescription";
+import { createHelpRequest, type HelpCategory } from "../../../services/helpRequest";
 
 type HelpRequestData = {
-    helpType?: string;
-    description?: string;
-    helpTime?: string;
-    location?: Address;
+    category: HelpCategory;
+    description: string;
+    helpDate: string;
+    address: Address;
 };
 
-type StepKey = "helpType" | "description" | "helpTime" | "location";
+type StepKey = "category" | "description" | "helpDate" | "address";
 
 const questions: { key: StepKey; label: string; placeholder?: string }[] = [
     {
-        key: "helpType",
+        key: "category",
         label: "Quel type d’aide recherchez-vous ?",
         placeholder: "Choisissez parmi les options ci-dessous...",
     },
@@ -28,12 +29,12 @@ const questions: { key: StepKey; label: string; placeholder?: string }[] = [
         placeholder: "Présentez-vous et décrivez en détail votre besoin....",
     },
     {
-        key: "helpTime",
+        key: "helpDate",
         label: "Indiquez-nous le moment qui vous conviendrait le mieux pour recevoir de l’aide",
         placeholder: "Sélectionnez un créneau...",
     },
     {
-        key: "location",
+        key: "address",
         label: "Pouvez-vous indiquer l'adresse complète où aura lieu l'entraide ?",
         placeholder: "Ex : 12 rue des Fleurs, 75000 Paris",
     },
@@ -54,10 +55,10 @@ export default function HelpRequestForm() {
     const [editingStep, setEditingStep] = useState<number | null>(null);
     const [isStepFinal, setIsStepFinal] = useState(false);
     const [formData, setFormData] = useState<HelpRequestData>({
-        helpType    : "",
+        category    : "AUTRE",
         description : "",
-        helpTime    : "",
-        location    : {
+        helpDate    : "",
+        address     : {
             number      : "",
             streetName  : "",
             street      : "",
@@ -69,6 +70,22 @@ export default function HelpRequestForm() {
         },
     });
 
+    const isValidCategory = (value: string): value is HelpCategory => {
+        return [
+            "COURSES",
+            "DEMENAGEMENT",
+            "GARDE_ENFANT",
+            "SOUTIEN_SCOLAIRE",
+            "PETITS_TRAVAUX",
+            "INFORMATIQUE",
+            "COMPAGNIE_VISITE",
+            "TRANSPORT",
+            "CUISINE",
+            "ADMINISTRATIF",
+            "AUTRE"
+        ].includes(value as HelpCategory);
+    };
+
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
     ) => {
@@ -79,23 +96,23 @@ export default function HelpRequestForm() {
         }));
     };
 
-    const handleLocationChange = (location: Address) => {
+    const handleAddressChange = (address: Address) => {
         setFormData((prev) => ({
         ...prev,
-        location,
+        address,
         }));
     };
 
     const isStepValid = (currentStep: number): boolean => {
         switch (currentStep) {
         case 1:
-            return !!formData.helpType?.trim();
+            return !!isValidCategory(formData.category);
         case 2:
             return !!formData.description?.trim();
         case 3:
-            return !!formData.helpTime?.trim();
+            return !!formData.helpDate?.trim();
         case 4:
-            return !!formData.location?.fullAddress?.trim();
+            return !!formData.address?.fullAddress?.trim();
         default:
             return true;
         }
@@ -138,17 +155,19 @@ export default function HelpRequestForm() {
             return;
         }
         console.log("Formulaire soumis :", formData);
-        // ici tu peux appeler une API ou autre logique d'envoi
+
+        // appel Api
+        createHelpRequest(formData);
     };
 
     const isFormComplete = (): boolean => {
         return (
-            !!formData.helpType?.trim() &&
+            !!formData.category?.trim() &&
             !!formData.description?.trim() &&
-            !!formData.helpTime?.trim() &&
-            !!formData.location?.fullAddress?.trim() &&
-            !!formData.location?.city?.trim() &&
-            !!formData.location?.postalCode?.trim()
+            !!formData.helpDate?.trim() &&
+            !!formData.address?.fullAddress?.trim() &&
+            !!formData.address?.city?.trim() &&
+            !!formData.address?.postalCode?.trim()
         );
     };
 
@@ -187,15 +206,15 @@ export default function HelpRequestForm() {
                 <ChatBubbleForm
                     question={currentQuestion?.label ?? ""}
                     type="select"
-                    value={formData.helpType ?? ""}
-                    onChange={(val) => setFormData({ ...formData, helpType: val })}
+                    value={formData.category ?? ""}
+                    onChange={(val) => setFormData({ ...formData, category: val as HelpCategory})}
                     onSend={handleNext}
                     placeholder={currentQuestion?.placeholder || ""}
                     options={helpTypeOptions}
                 />
                 ) : (
                     <HelpTypeSummary
-                        value={formData.helpType ?? "—"}
+                        value={formData.category ?? "—"}
                         onEdit={() => handleEdit(1)}
                     />
                 )}
@@ -232,14 +251,14 @@ export default function HelpRequestForm() {
                 <ChatBubbleForm
                     question={currentQuestion?.label ?? ""}
                     type="datetime"
-                    value={formData.helpTime ?? ""}
-                    onChange={(val) => setFormData({ ...formData, helpTime: val })}
+                    value={formData.helpDate ?? ""}
+                    onChange={(val) => setFormData({ ...formData, helpDate: val })}
                     onSend={handleNext}
                     placeholder={currentQuestion?.placeholder || ""}
                 />
                 ) : (
                 <HelpDateTimeSummary
-                    dateTime={formData.helpTime ?? "—"}
+                    dateTime={formData.helpDate ?? "—"}
                     onEdit={() => handleEdit(3)}
                 />
                 )}
@@ -253,14 +272,14 @@ export default function HelpRequestForm() {
                 <ChatBubbleForm
                     question={currentQuestion?.label ?? ""}
                     type="address"
-                    value={formData.location?.fullAddress ?? ""}
+                    value={formData.address?.fullAddress ?? ""}
                     onChange={(val) => {
                     try {
                         const parsed = JSON.parse(val);
-                        handleLocationChange(parsed);
+                        handleAddressChange(parsed);
                     } catch {
                         // En cas d'erreur, on stocke une adresse avec uniquement fullAddress
-                        handleLocationChange({
+                        handleAddressChange({
                         number: "",
                         streetName: "",
                         street: "",
@@ -277,9 +296,9 @@ export default function HelpRequestForm() {
                 />
                 ) : (
                     <HelpAddressSummary
-                        street={formData.location?.street ?? "—"}
-                        postalCode={formData.location?.postalCode ?? "—"}
-                        city={formData.location?.city ?? "—"}
+                        street={formData.address?.street ?? "—"}
+                        postalCode={formData.address?.postalCode ?? "—"}
+                        city={formData.address?.city ?? "—"}
                         onEdit={() => handleEdit(4)}
                     />
                 )}

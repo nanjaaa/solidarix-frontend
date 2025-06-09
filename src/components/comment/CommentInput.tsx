@@ -3,10 +3,11 @@ import { SendHorizontal, X } from "lucide-react";
 import { useAutoResizeTextarea } from "../../hooks/UseZutoResizeTextarea";
 
 type Props = {
-    onSend?: (text: string) => void;
+    onSubmit: (content: string) => void | Promise<void>;
+    disabled?: boolean;
 };
 
-export default function CommentInput( { onSend } : Props ) {
+export default function CommentInput( { onSubmit, disabled  } : Props ) {
     const [value, setValue] = useState("");
     const textareaRef = useAutoResizeTextarea(value, 3);
     const [showSendButton, setShowSendButton] = useState(false);
@@ -37,8 +38,8 @@ export default function CommentInput( { onSend } : Props ) {
     };
 
     const handleSend = () => {
-        if (onSend && value.trim() !== "") {
-            onSend(value.trim());
+        if (onSubmit && value.trim() !== "") {
+            onSubmit(value.trim());
             setValue("");
             setShowSendButton(false);
             if (textareaRef.current) {
@@ -54,7 +55,13 @@ export default function CommentInput( { onSend } : Props ) {
                 ref={textareaRef}
                 value={value}
                 onInput={handleInput}
-                onChange={handleChange} 
+                onChange={handleChange}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                    }
+                }} 
                 placeholder="Écrire un commentaire"
                 rows={1}
                 className="commentInput flex-1 outline-none text-sm resize-none overflow-hidden leading-tight min-h-[2.25rem] py-[0.5rem]"
@@ -75,15 +82,7 @@ export default function CommentInput( { onSend } : Props ) {
 
                     <SendHorizontal
                         className="text-primary-green hover:text-hover-green ml-2 flex-shrink-0 cursor-pointer w-7 h-7"
-                        onClick={() => {
-                            // ici : logique d'envoi
-                            setValue("");
-                            setShowSendButton(false);
-                            if (textareaRef.current) {
-                                textareaRef.current.blur();
-                                textareaRef.current.style.height = "auto";
-                            }
-                        }}
+                        onClick={handleSend}
                     />
 
                 </>

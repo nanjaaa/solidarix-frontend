@@ -5,7 +5,9 @@ import './index.css'
 import App from './App.tsx'
 import RootLayout from './components/layout/RootLayout.tsx'
 import { AuthProvider } from './context/AuthContext.tsx'
+import { initializeAuthHeader } from './services/authService.ts'
 
+initializeAuthHeader(); // Important : avant tout
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
