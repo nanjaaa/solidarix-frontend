@@ -15,7 +15,7 @@ export default function CancellationPanel({ isRequester, onConfirm, onCancel }: 
         : "Souhaitez-vous vraiment retirer votre proposition d'aide?"
 
     return (
-        <div className="w-full border-t-2 pt-3 mt-4">
+        <div className="w-full">
             {step === "confirm" && (
                 <div className="flex flex-col items-center gap-4">
                     <span className="text-secondary-lightgray text-center italic text-sm px-2">

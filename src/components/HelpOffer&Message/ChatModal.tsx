@@ -8,6 +8,7 @@ import ExpirationCountdown from "./ExpirationCountdown";
 import HelpOfferActionZone from "./HelpOfferActionZone";
 import CancellationPanel from "./CancellationPanel";
 import HelpOfferStatusInfo from "./HelpOfferStatusInfo";
+import HelpRequestPresentation from "./HelpRequestPresentation";
 
 
 
@@ -35,7 +36,14 @@ export default function ChatModal({
     const messages  = helpOffer.messages;
     const status    = parseHelpOfferStatus(helpOffer.status);
     const isExpired = status === "EXPIRED";
-    const isInputDisabled = isExpired || showCancelPanel;
+
+    const isChatClosed = typeof status === "string" && [
+        "DONE",
+        "FAILED",
+        "CANCELED_BY_REQUESTER",
+        "CANCELED_BY_HELPER",
+        "EXPIRED"
+    ].includes(status);
     
     useEffect(() => {
         if (isOpen && textareaRef.current) {
@@ -87,114 +95,146 @@ export default function ChatModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm px-4">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl h-[80vh] p-6 flex flex-col relative">
-                <button onClick={onClose} className="absolute top-3 right-4 text-gray-500 hover:text-gray-700 text-xl">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col relative overflow-hidden">
+                <button
+                    onClick={onClose}
+                    className="absolute top-3 right-4 text-gray-500 hover:text-gray-700 text-xl"
+                >
                     ×
                 </button>
 
-                <h2 className="text-lg font-bold mb-4">Messagerie</h2>
-
-                {/* Zone des messages */}
-                <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-                    {messages.map((msg) => {
-                        const isOwn = msg.sender.id === currentUser.id;
-                        return (
-                            <div key={msg.id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
-                                <div
-                                    className={`px-4 py-2 max-w-[60%] shadow-md select-none whitespace-pre-wrap break-words ${
-                                        isOwn
-                                        ? "bg-white text-gray-800 rounded-bl-3xl rounded-tr-3xl rounded-tl-3xl"
-                                        : "bg-primary-green text-white rounded-br-3xl rounded-tl-3xl rounded-tr-3xl"
-                                    }`}
-                                    >
-                                    {msg.content}
-                                </div>
-                        </div>
-                        );
-                    })}
-                    <div ref={scrollRef} />
-                </div>
-
-                {/* Zone de saisie */}
-                <div className="flex justify-end mt-2 gap-2">
-                    <textarea
-                        ref={textareaRef}
-                        rows={1}
-                        placeholder="Écrivez un message..."
-                        className="w-[60%] min-h-[40px] max-h-[300px] bg-background-ow outline-none px-4 py-2 rounded-bl-3xl rounded-tr-3xl rounded-tl-3xl shadow-inner border border-gray-300 resize-none overflow-y-auto whitespace-pre-wrap"
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        disabled={isInputDisabled}
-                    />
-
-                    { newMessage.trim() !== "" && (                     
-                        <button
-                            onClick={() => {
-                                if (newMessage.trim()) {
-                                    onSendMessage(newMessage.trim());
-                                    setNewMessage("");
-                                }
-                            }}
-                            className="order-1 text-primary-green hover:text-hover-green transition-colors"
-                            disabled={newMessage.trim() === ""}
-                            aria-label="Envoyer"
-                        >
-                            <SendHorizontal className="w-7 h-7" />
-                        </button>
-                    )}
-                </div>
-
-
-                {/** Bloc d'information sur le statut du helpOffer */}
-                <div className="mt-10 flex justify-center">
-                    <HelpOfferStatusInfo
-                        status={status}
+                {/* Bloc fixe : Présentation */}
+                <div className="p-6 pb-0 shrink-0 shadow-md rounded-2xl">
+                    <HelpRequestPresentation
+                        helpRequest={helpOffer.helpRequest}
                         currentUser={currentUser}
-                        requester={helpOffer.helpRequest.requester}
-                        helper={helpOffer.offerer}
-                        cancellationJustification={helpOffer.cancellationJustification}
+                        otherUser={
+                            helpOffer.helpRequest.requester.id === currentUser.id
+                                ? helpOffer.offerer
+                                : helpOffer.helpRequest.requester
+                        }
+                        isHelper={helpOffer.offerer.id === currentUser.id}
                     />
                 </div>
 
-    
-                {/** Zone d'affichage du compte à rebours d'expiration */}
-                {isExpirableStatus(status) && (
-                    <div className="mt-0 p-4 flex justify-center">
-                        <ExpirationCountdown
-                            expirationReference={helpOffer.expirationReference}
-                            status={status}
-                            currentUserId={currentUser.id}
-                            requesterId={helpOffer.helpRequest.requester.id}
-                            onExpire={onRefreshHelpOffer}
-                        />
+                {/* Bloc scrollable : messages + bas */}
+                <div className="flex-1 flex flex-col overflow-y-auto px-6 pt-4 space-y-2">
+                    
+                    {/* Zone des messages */}
+                    <div className="flex flex-col gap-3 pr-2">
+                        {messages.map((msg) => {
+                            const isOwn = msg.sender.id === currentUser.id;
+                            const avatarUrl = `https://api.dicebear.com/6.x/lorelei/svg?seed=${msg.sender.id}`;
+                            return (
+                                <div
+                                    key={msg.id}
+                                    className={`flex items-end gap-2 ${isOwn ? "justify-end" : "justify-start"}`}
+                                >
+                                    {/* Avatar pour l'autre utilisateur */}
+                                    {!isOwn && (
+                                        <img
+                                            src={avatarUrl}
+                                            alt={msg.sender.firstName}
+                                            className="w-8 h-8 rounded-full"
+                                        />
+                                    )}
+
+                                    {/* Bulle de message */}
+                                    <div
+                                        className={`px-4 py-2 max-w-[60%] shadow-md select-none whitespace-pre-wrap break-words ${
+                                            isOwn
+                                                ? "bg-white text-gray-800 rounded-bl-3xl rounded-tr-3xl rounded-tl-3xl"
+                                                : "bg-primary-green text-white rounded-br-3xl rounded-tl-3xl rounded-tr-3xl"
+                                        }`}
+                                    >
+                                        {msg.content}
+                                    </div>
+
+                                    {/* Avatar fantôme pour aligner proprement mes messages */}
+                                    {/*isOwn && <div className="w-8" />} {/* Espace vide en face */}
+                                </div>
+                            );
+                        })}
+                        <div ref={scrollRef} />
                     </div>
-                )}        
 
+                    {/* Zone de saisie - Lasqué dans certains cas*/}
+                    {!isChatClosed && (
+                    <div className="flex justify-end gap-2">
+                        <textarea
+                            ref={textareaRef}
+                            rows={1}
+                            placeholder="Écrivez un message..."
+                            className="w-[60%] min-h-[40px] max-h-[300px] bg-background-ow outline-none px-4 py-2 rounded-bl-3xl rounded-tr-3xl rounded-tl-3xl shadow-inner border border-gray-300 resize-none overflow-y-auto whitespace-pre-wrap"
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                        />
+                        {newMessage.trim() !== "" && (
+                            <button
+                                onClick={() => {
+                                    if (newMessage.trim()) {
+                                        onSendMessage(newMessage.trim());
+                                        setNewMessage("");
+                                    }
+                                }}
+                                className="order-1 text-primary-green hover:text-hover-green transition-colors"
+                                disabled={newMessage.trim() === ""}
+                                aria-label="Envoyer"
+                            >
+                                <SendHorizontal className="w-7 h-7" />
+                            </button>
+                        )}
+                    </div>
+                    )}
 
-                {/*Zone de validation/annulation*/}
-                { !showCancelPanel && (
-                    <HelpOfferActionZone
-                        status={status}
-                        currentUserId={currentUser.id}
-                        requesterId={helpOffer.helpRequest.requester.id}
-                        onCancel={() => setShowCancelPanel(true)} // on affiche le panneau
-                        onValidate={handleValidate}
-                        onConfirm={handleConfirm}
-                    />
-                    )
-                }
-                
+                    {/* Zone d'informations de statut + actions */}
+                    <div className="border-t-3 pt-3 mt-1 pb-6 px-4 flex flex-col items-center gap-2">
 
+                        {/* Info sur le statut de l'offre (ex: validée, en attente...) */}
+                        <HelpOfferStatusInfo
+                            status={status}
+                            currentUser={currentUser}
+                            requester={helpOffer.helpRequest.requester}
+                            helper={helpOffer.offerer}
+                            cancellationJustification={helpOffer.cancellationJustification}
+                        />
 
-                {/** Zonne d'annulation */}
-                {showCancelPanel && (
-                    <CancellationPanel
-                        isRequester={currentUser.id === helpOffer.helpRequest.requester.id}
-                        onCancel={() => setShowCancelPanel(false)}
-                        onConfirm={handleCancellation}
-                    />
-                )}
+                        {/* Compte à rebours avant expiration (si applicable) */}
+                        {isExpirableStatus(status) && (
+                            <div className="w-full flex justify-center">
+                                <ExpirationCountdown
+                                    expirationReference={helpOffer.expirationReference}
+                                    status={status}
+                                    currentUserId={currentUser.id}
+                                    requesterId={helpOffer.helpRequest.requester.id}
+                                    onExpire={onRefreshHelpOffer}
+                                />
+                            </div>
+                        )}
 
+                        {/* Zone d'actions principales (valider, confirmer, annuler) */}
+                        {!showCancelPanel && (
+                            <HelpOfferActionZone
+                                status={status}
+                                currentUserId={currentUser.id}
+                                requesterId={helpOffer.helpRequest.requester.id}
+                                onCancel={() => setShowCancelPanel(true)}
+                                onValidate={handleValidate}
+                                onConfirm={handleConfirm}
+                            />
+                        )}
+
+                        {/* Panneau d'annulation avec champ justification */}
+                        {showCancelPanel && (
+                            <CancellationPanel
+                                isRequester={currentUser.id === helpOffer.helpRequest.requester.id}
+                                onCancel={() => setShowCancelPanel(false)}
+                                onConfirm={handleCancellation}
+                            />
+                        )}
+                    </div>
+                                       
+                </div>
             </div>
         </div>
     );

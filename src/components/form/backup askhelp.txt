@@ -1,288 +1,218 @@
-import { useState } from "react";
-import { ChatBubbleForm } from "./ChatFormBubble";
-import type { Address } from "../../hooks/UseAddressAutocomplete";
+import { SendHorizontal } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import type { UserSimpleDto } from "../../types/helpRequest";
+import { cancelHelpOffer, confirmHelpOffer, parseHelpOfferStatus, validateHelpOffer, type HelpOfferDiscussionDto } from "../../services/helpOffer";
+import { useAutoResizeTextarea } from "../../hooks/UseZutoResizeTextarea";
+import { isExpirableStatus } from "../../utils/expirations";
+import ExpirationCountdown from "./ExpirationCountdown";
+import HelpOfferActionZone from "./HelpOfferActionZone";
+import CancellationPanel from "./CancellationPanel";
+import HelpOfferStatusInfo from "./HelpOfferStatusInfo";
+import HelpRequestPresentation from "./HelpRequestPresentation";
 
-type HelpRequestData = {
-    helpType?: string;
-    description?: string;
-    helpTime?: string;
-    location?: Address
+
+
+interface ChatModalProps {
+    isOpen              : boolean;
+    onClose             : () => void;
+    onSendMessage       : (message: string) => void;
+    helpOffer           : HelpOfferDiscussionDto; 
+    currentUser         : UserSimpleDto;
+    onRefreshHelpOffer  : () => void; 
 }
 
-type StepKey = "helpType" | "description" | "location" | "helpTime";
+export default function ChatModal({
+    isOpen,
+    onClose,
+    onSendMessage,
+    helpOffer,
+    currentUser,
+    onRefreshHelpOffer,
+}: ChatModalProps) {
+    const [newMessage, setNewMessage] = useState("");
+    const textareaRef = useAutoResizeTextarea(newMessage, 4);
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [showCancelPanel, setShowCancelPanel] = useState(false);
+    const messages  = helpOffer.messages;
+    const status    = parseHelpOfferStatus(helpOffer.status);
+    const isExpired = status === "EXPIRED";
+    const isInputDisabled = isExpired || showCancelPanel;
+    
+    useEffect(() => {
+        if (isOpen && textareaRef.current) {
+            textareaRef.current.focus();
+        }
+    }, [isOpen]);
 
-const questions: { key: StepKey; label: string; placeholder?: string }[] = [
-    { 
-        key: "helpType", 
-        label: "Quel type d’aide recherchez-vous ?", 
-        placeholder: "Choisissez parmi les options ci-dessous..." 
-    },
-    { 
-        key: "description", 
-        label: "Pourriez-vous dire un peu plus sur votre besoin :) ?", 
-        placeholder: "Présentez-vous et décrivez en détail vote besoin...." 
-    },
-    { 
-        key: "helpTime", 
-        label : "Indiquez-nous le moment qui vous conviendrait le mieux pour recevoir de l’aide", 
-        placeholder: "Sélectionnez un crénau..."},
-    { 
-        key: "location", 
-        label: "Pouvez-vous indiquer l'adresse complète où aura lieu l'entraide ?",
-        placeholder: "Ex : 12 rue des Fleurs, 75000 Paris"
-    },
-];
+    useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === "Escape") onClose();
+        };
+        document.addEventListener("keydown", handleEsc);
+        return () => document.removeEventListener("keydown", handleEsc);
+    }, [onClose]);
 
-export default function HelpRequestForm() {
-    const [step, setStep] = useState<number>(0);
-    const currentQuestion = questions[step-1];
-    const [maxStepReached, setMaxStepReached] = useState<number>(0);
-    const [formData, setFormData] = useState<HelpRequestData>({
-        helpType: "",
-        description: "",
-        helpTime: "",
-        location: {
-            number: 0,
-            streetName: "",
-            street: "",
-            postalCode: "",
-            city: "",
-            latitude: "",
-            longitude: "",
-            fullAddress: "",
-        },
-    });
+    useEffect(() => {
+        scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages]);
 
-    const [editingStep, setEditingStep] = useState<number | null>(null);
-
-    const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-    ) => {
-            const { name, value } = e.target;
-            setFormData((prev) => ({
-                ...prev,
-                [name]: value,
-        }));
-    };
-
-    const handleLocationChange = (location: Address) => {
-        setFormData((prev) => ({
-            ...prev,
-            location,
-        }));
-    };
-
-    const isStepValid = (currentStep: number): boolean => {
-        switch (currentStep) {
-            case 1:
-            return !!formData.helpType?.trim();
-            case 2:
-            return !!formData.description?.trim();
-            case 3:
-            return !!formData.helpTime?.trim();
-            case 4:
-            return !!formData.location?.fullAddress?.trim();
-            default:
-            return true;
+    const handleCancellation = async (justification: string) => {
+        try {
+            await cancelHelpOffer(helpOffer.helpOfferId, justification);
+            setShowCancelPanel(false);
+            onClose();
+        } catch (err) {
+            console.error("Erreur lors de l'annulation :", err);
         }
     };
 
-    const handleNext = () => {
-        if (!isStepValid(step)) return;
-        const nextStep = Math.max(maxStepReached,step + 1);
-        setMaxStepReached(() => nextStep);
-        setStep(nextStep);
-        setEditingStep(null);
+    const handleValidate = async () => {
+        try {
+            await validateHelpOffer(helpOffer.helpOfferId);
+            onClose(); // ou refresh ?
+        } catch (error) {
+            console.error("Erreur lors de la validation :", error);
+        }
     };
 
-    const handleEdit = (stepNumber: number) => {
-        setEditingStep(stepNumber);
-        setStep(stepNumber);
+    const handleConfirm = async () => {
+        try {
+            await confirmHelpOffer(helpOffer.helpOfferId);
+            onClose(); // ou refresh ?
+        } catch (error) {
+            console.error("Erreur lors de la confirmation :", error);
+        }
     };
-    
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        console.log("Formulaire soumis :", formData);
-    };
 
-  return (
-    <div className="card w-[800px]">
-        <form
-            onSubmit={handleSubmit}
-            className=""
-        >
-        <h2 className="text-xl font-semibold text-primary-darkblue">
-            Demande d’aide
-        </h2>
+    if (!isOpen) return null;
 
-        {step === 0 && (
-            <button
-            type="button"
-            onClick={handleNext}
-            className="bg-primary-green text-white py-2 px-4 rounded hover:bg-green-700"
-            >
-            Commencer
-            </button>
-        )}
-
-        {/* Étape 1 - Type d’aide */}
-        {maxStepReached >= 1 && (
-            <div className="my-4">
-            {/*<label className="block text-sm font-medium text-primary-darkblue">
-                Quel type d’aide recherchez-vous ?
-            </label>*/}
-            {step === 1 || editingStep === 1 ? (
-                
-                <ChatBubbleForm
-                    question={currentQuestion.label}
-                    type="select"
-                    value={formData.helpType ?? ""}
-                    onChange={(val) => setFormData({ ...formData, helpType: val })}
-                    onSend={handleNext}
-                    placeholder={currentQuestion.placeholder || ""}
-                    options={["Courses", "Bricolage", "Garde d’enfants"]}
-                />
-                       
-            ) : (
-                <div className="bg-gray-100 p-2 rounded flex justify-between items-center">
-                    <span>🛠 Type d’aide : {formData.helpType || "—"}</span>
-                    <button
-                        type="button"
-                        onClick={() => handleEdit(1)}
-                        className="text-sm text-blue-600 hover:underline"
-                    >
-                        Modifier
-                    </button>
-                </div>
-            )}
-            </div>
-        )}
-
-        {/* Étape 2 */}
-        {maxStepReached >= 2 && (
-            <div className="my-4">
-            {step === 2 || editingStep === 2 ? (
-                
-                <ChatBubbleForm
-                    question={currentQuestion.label}
-                    type="text"
-                    value={formData.description ?? ""}
-                    onChange={(val) => setFormData({ ...formData, description: val })}
-                    onSend={handleNext}
-                    placeholder={currentQuestion.placeholder || ""}
-                />
-
-            ) : (
-                <div className="bg-gray-100 p-2 rounded flex justify-between items-center">
-                <span>📝 Description : {formData.description || "—"}</span>
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm px-4">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col relative overflow-hidden">
                 <button
-                    type="button"
-                    onClick={() => handleEdit(2)}
-                    className="text-sm text-blue-600 hover:underline"
+                    onClick={onClose}
+                    className="absolute top-3 right-4 text-gray-500 hover:text-gray-700 text-xl"
                 >
-                    Modifier
+                    ×
                 </button>
-                </div>
-            )}
-            </div>
-        )}
 
-        {/* Étape 3 */}
-        {maxStepReached >= 3 && (
-            <div className="my-4">
-            {step === 3 || editingStep === 3 ? (
-                <>
-                <ChatBubbleForm
-                    question={currentQuestion.label}
-                    type="datetime"
-                    value={formData.helpTime ?? ""}
-                    onChange={(val) => setFormData({ ...formData, helpTime: val })}
-                    onSend={handleNext}
-                    placeholder={currentQuestion.placeholder || ""}
-                />
-                </>
-            ) : (
-                <div className="bg-gray-100 p-2 rounded flex justify-between items-center">
-                <span>
-                    🕓 Date et heure :{" "}
-                    {formData.helpTime
-                    ? new Date(formData.helpTime).toLocaleString("fr-FR", {
-                        dateStyle: "full",
-                        timeStyle: "short",
-                        })
-                    : "—"}
-                </span>
-                <button
-                    type="button"
-                    onClick={() => handleEdit(3)}
-                    className="text-sm text-blue-600 hover:underline"
-                >
-                    Modifier
-                </button>
-                </div>
-            )}
-            </div>
-        )}
-
-
-        {/* Étape 4 */}
-        {maxStepReached >= 4 && (
-            <div className="my-4">
-                {step === 4 || editingStep === 4 ? (
-                    <ChatBubbleForm
-                        question={currentQuestion.label}
-                        type="address"
-                        value={formData.location?.fullAddress ?? ""}
-                        onChange={(val) => {
-                            try {
-                                const parsed = JSON.parse(val);
-                                handleLocationChange(parsed);
-                            } catch {
-                                // En cas d'erreur, on stocke une adresse avec uniquement fullAddress
-                                handleLocationChange({
-                                    number: 0,
-                                    streetName: "",
-                                    street: "",
-                                    postalCode: "",
-                                    city: "",
-                                    latitude: "",
-                                    longitude: "",
-                                    fullAddress: val,
-                                });
-                            }
-                        }}
-                        onSend={handleNext}
-                        placeholder={currentQuestion.placeholder || ""}
+                {/* Bloc fixe : Présentation */}
+                <div className="p-6 pb-0 shrink-0">
+                    <HelpRequestPresentation
+                        helpRequest={helpOffer.helpRequest}
+                        currentUser={currentUser}
+                        otherUser={
+                            helpOffer.helpRequest.requester.id === currentUser.id
+                                ? helpOffer.offerer
+                                : helpOffer.helpRequest.requester
+                        }
+                        isHelper={helpOffer.offerer.id === currentUser.id}
                     />
-                ) : (
-                    <div className="bg-gray-100 p-2 rounded flex justify-between items-center">
-                        <span>📍 Adresse : {formData.location?.fullAddress || "—"}</span>
-                        <button
-                            type="button"
-                            onClick={() => handleEdit(4)}
-                            className="text-sm text-blue-600 hover:underline"
-                        >
-                            Modifier
-                        </button>
+                </div>
+
+                {/* Bloc scrollable : messages + bas */}
+                <div className="flex-1 flex flex-col overflow-y-auto px-6 pt-4 space-y-2">
+                    
+                    {/* Zone des messages */}
+                    <div className="flex flex-col gap-3 pr-2">
+                        {messages.map((msg) => {
+                            const isOwn = msg.sender.id === currentUser.id;
+                            return (
+                                <div key={msg.id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
+                                    <div
+                                        className={`px-4 py-2 max-w-[60%] shadow-md select-none whitespace-pre-wrap break-words ${
+                                            isOwn
+                                                ? "bg-white text-gray-800 rounded-bl-3xl rounded-tr-3xl rounded-tl-3xl"
+                                                : "bg-primary-green text-white rounded-br-3xl rounded-tl-3xl rounded-tr-3xl"
+                                        }`}
+                                    >
+                                        {msg.content}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        <div ref={scrollRef} />
                     </div>
-                )}
+
+                    {/* Zone de saisie */}
+                    <div className="flex justify-end gap-2">
+                        <textarea
+                            ref={textareaRef}
+                            rows={1}
+                            placeholder="Écrivez un message..."
+                            className="w-[60%] min-h-[40px] max-h-[300px] bg-background-ow outline-none px-4 py-2 rounded-bl-3xl rounded-tr-3xl rounded-tl-3xl shadow-inner border border-gray-300 resize-none overflow-y-auto whitespace-pre-wrap"
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            disabled={isInputDisabled}
+                        />
+                        {newMessage.trim() !== "" && (
+                            <button
+                                onClick={() => {
+                                    if (newMessage.trim()) {
+                                        onSendMessage(newMessage.trim());
+                                        setNewMessage("");
+                                    }
+                                }}
+                                className="order-1 text-primary-green hover:text-hover-green transition-colors"
+                                disabled={newMessage.trim() === ""}
+                                aria-label="Envoyer"
+                            >
+                                <SendHorizontal className="w-7 h-7" />
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Infos statut */}
+                    <div className="flex justify-center">
+                        <HelpOfferStatusInfo
+                            status={status}
+                            currentUser={currentUser}
+                            requester={helpOffer.helpRequest.requester}
+                            helper={helpOffer.offerer}
+                            cancellationJustification={helpOffer.cancellationJustification}
+                        />
+                    </div>
+
+                    {/* Compte à rebours */}
+                    {isExpirableStatus(status) && (
+                        <div className="px-4 flex justify-center">
+                            <ExpirationCountdown
+                                expirationReference={helpOffer.expirationReference}
+                                status={status}
+                                currentUserId={currentUser.id}
+                                requesterId={helpOffer.helpRequest.requester.id}
+                                onExpire={onRefreshHelpOffer}
+                            />
+                        </div>
+                    )}
+
+                    {/* Zone action */}
+                    <div className="border-t pt-2 pb-4 px-4">
+
+                        {/** Choix Actions */}
+                        {!showCancelPanel && (
+                        <HelpOfferActionZone
+                            status={status}
+                            currentUserId={currentUser.id}
+                            requesterId={helpOffer.helpRequest.requester.id}
+                            onCancel={() => setShowCancelPanel(true)}
+                            onValidate={handleValidate}
+                            onConfirm={handleConfirm}
+                        />
+                        )}
+
+                        {/* Annulation */}
+                        {showCancelPanel && (
+                            <CancellationPanel
+                                isRequester={currentUser.id === helpOffer.helpRequest.requester.id}
+                                onCancel={() => setShowCancelPanel(false)}
+                                onConfirm={handleCancellation}
+                            />
+                        )}
+                    </div>
+                    
+                </div>
             </div>
-        )}
-
-
-        {maxStepReached >= 4 && editingStep === null && (
-            <button
-                type="submit"
-                className="bg-primary-green text-white py-2 px-4 rounded hover:bg-green-700"
-            >
-            Envoyer ma demande
-            </button>
-        )}
-
-        <pre className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-            Debug: {JSON.stringify(formData, null, 2)}
-        </pre>
-        </form>
-    </div>
-  );
+        </div>
+    );
 }

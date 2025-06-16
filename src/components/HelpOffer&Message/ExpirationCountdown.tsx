@@ -20,11 +20,7 @@ const ExpirationCountdown = ({
 }: ExpirationCountdownProps) => {
     const [remaining, setRemaining] = useState("");
     const [expired, setExpired] = useState(false);
-    const [refreshKey, setRefreshKey] = useState(0);
 
-    const handleExpire = () => {
-        setRefreshKey(prev => prev + 1);
-    };
 
     const isRequester = currentUserId === requesterId;
 
@@ -44,7 +40,7 @@ const ExpirationCountdown = ({
             if (diff <= 0) {
                 setExpired(true);
                 setRemaining("00h 00mn");
-                onExpire();
+                onExpire?.(); // Notifie le parent
                 return;
             }
 
@@ -127,7 +123,7 @@ const ExpirationCountdown = ({
         <InfoBanner
             icon={
                 <Clock
-                    className={`w-4 h-4 ${
+                    className={`w-5 h-5 ${
                     expired ? "text-red-500" : "text-primary-green"
                     }`}
                 />

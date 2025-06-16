@@ -48,7 +48,7 @@ export default function HelpOfferActionZone({
         : "Retirer ma proposition"
 
     return (
-        <div className="flex flex-col pt-3 items-center border-t-2 gap-2">
+        <div className="flex flex-col items-center gap-2">
             <span className="text-secondary-lightgray text-center italic text-sm px-2">
                 {message}
             </span>

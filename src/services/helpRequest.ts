@@ -85,3 +85,61 @@ export const postComment = async (dto: HelpRequestCommentCreationDto) => {
   return response.data;
 };
 
+
+export function getHelpRequestPresentationTitle(
+  category            : HelpCategory,
+  otherUserFirstName  : string,
+  isHelper             : boolean
+): string {
+  const titles: Record<HelpCategory, [string, string]> = {
+    COURSES: [
+      `Un coup de main à ${otherUserFirstName} pour remplir son frigo`,
+      `${otherUserFirstName} vous aide à faire vos courses tranquillement`,
+    ],
+    DEMENAGEMENT: [
+      `Vous aidez ${otherUserFirstName} à changer de nid`,
+      `${otherUserFirstName} vous donne un coup de main pour déménager`,
+    ],
+    GARDE_ENFANT: [
+      `Un moment avec les enfants de ${otherUserFirstName}`,
+      `${otherUserFirstName} garde vos petits pendant votre absence`,
+    ],
+    SOUTIEN_SCOLAIRE: [
+      `Vous aidez ${otherUserFirstName} à progresser dans ses études`,
+      `${otherUserFirstName} vous donne un coup de pouce pour vos devoirs`,
+    ],
+    PETITS_TRAVAUX: [
+      `Un peu de bricolage chez ${otherUserFirstName}`,
+      `${otherUserFirstName} vous aide à réparer ou installer quelque chose`,
+    ],
+    INFORMATIQUE: [
+      `Vous dépannez ${otherUserFirstName} avec son ordinateur`,
+      `${otherUserFirstName} vous aide à dompter l’informatique`,
+    ],
+    COMPAGNIE_VISITE: [
+      `Vous passez un moment convivial avec ${otherUserFirstName}`,
+      `${otherUserFirstName} vient partager un moment avec vous`,
+    ],
+    TRANSPORT: [
+      `Vous accompagnez ${otherUserFirstName} pour un déplacement`,
+      `${otherUserFirstName} vous conduit là où vous devez aller`,
+    ],
+    CUISINE: [
+      `Vous cuisinez avec ou pour ${otherUserFirstName}`,
+      `${otherUserFirstName} vous donne un coup de main en cuisine`,
+    ],
+    ADMINISTRATIF: [
+      `Vous aidez ${otherUserFirstName} à démêler ses papiers`,
+      `${otherUserFirstName} vous aide avec vos démarches administratives`,
+    ],
+    AUTRE: [
+      `Un coup de main à ${otherUserFirstName}, tout simplement`,
+      `${otherUserFirstName} vous apporte un peu d’aide selon vos besoins`,
+    ],
+  };
+
+  const [helperTitle, requesterTitle] = titles[category];
+  return isHelper ? helperTitle : requesterTitle;
+}
+
+
