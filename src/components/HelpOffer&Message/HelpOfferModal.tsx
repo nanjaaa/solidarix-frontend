@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 
-interface HelpOfferModalProps {
+export interface HelpOfferModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (message: string) => void;

@@ -1,6 +1,6 @@
 import type { Address } from "../hooks/UseAddressAutocomplete";
 import api from "../lib/axios";
-import type { PublicHelpRequestDto } from "../types/helpRequest";
+import type { HelpRequestDto } from "../types/helpRequest";
 import { getCoordinatesFromPostalCode } from "../utils/geolocation";
 import { getAuthToken } from "./authService";
 
@@ -68,7 +68,7 @@ export const createHelpRequest = async (data: CreateHelpRequestDto) => {
 };
 
 
-export const fetchHelpRequestsFeed = async (): Promise<PublicHelpRequestDto[]> => {
+export const fetchHelpRequestsFeed = async (): Promise<HelpRequestDto[]> => {
   const response = await api.get("/help-request/feed");
   return response.data;
 };

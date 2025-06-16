@@ -1,14 +1,16 @@
 import { useState } from "react";
-import type { PublicHelpRequestDto, Comment } from "../types/helpRequest";
+import type { Comment, HelpRequestDto } from "../types/helpRequest";
 import { Heart, MessageCircle, SquareArrowOutUpRight } from "lucide-react";
 import CommentInput from "./comment/CommentInput";
 import { timeAgo } from "../utils/timeAgo";
 import CommentThread from "./comment/CommentThread";
-import HelpOfferModal from "./HelpOfferModal";
 import { categoryMessages, postComment } from "../services/helpRequest";
+import { createHelpOffer } from "../services/helpOffer";
+import toast from "react-hot-toast";
+import HelpOfferModal from "./HelpOffer&Message/HelpOfferModal";
 
 interface Props {
-  helpRequest: PublicHelpRequestDto;
+  helpRequest: HelpRequestDto;
   onAddComment: (content: string, parentCommentId?: number) => void;
 }
 
@@ -66,6 +68,17 @@ export default function HelpRequestCard({ helpRequest }: Props) {
             console.error("Erreur lors de l'ajout du commentaire :", e);
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleSubmitOffer = async (message: string) => {
+        try {
+            await createHelpOffer(helpRequest.id, message);
+            console.log("Proposition envoyée !");
+            toast.success("Proposition envoyée !");
+        } catch (e) {
+            console.error("Erreur lors de la création de la proposition :", e);
+            toast.error("Erreur lors de l'envoi !");
         }
     };
 
@@ -135,9 +148,9 @@ export default function HelpRequestCard({ helpRequest }: Props) {
                 </div>
 
                 <HelpOfferModal
-                isOpen={isModalOpen}
-                onClose={() => setModalOpen(false)}
-                onSubmit={(message) => console.log("Message envoyé :", message)}
+                    isOpen={isModalOpen}
+                    onClose={() => setModalOpen(false)}
+                    onSubmit={handleSubmitOffer}
                 />
 
                 {showComments && (

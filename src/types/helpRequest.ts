@@ -25,7 +25,7 @@ export type Comment = {
     replies?: Comment[];
 };
 
-export type PrivateHelpRequestDto = {
+export type HelpRequestDto = {
     id: number;
     requester: UserSimpleDto; // ⚠️ remplacer authorId
     category: string;
@@ -35,17 +35,5 @@ export type PrivateHelpRequestDto = {
     status: string;
     postalSummary: string;
     comments: Comment[];
-    address: Address
-};
-
-export type PublicHelpRequestDto = {
-    id: number;
-    requester: UserSimpleDto; // ⚠️ remplacer authorId
-    category: string;
-    description: string;
-    helpDate: string;
-    createdAt: string;
-    status: string;
-    postalSummary: string;
-    comments: Comment[];
+    address?: Address
 };

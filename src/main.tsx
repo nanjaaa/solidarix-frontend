@@ -6,6 +6,7 @@ import App from './App.tsx'
 import RootLayout from './components/layout/RootLayout.tsx'
 import { AuthProvider } from './context/AuthContext.tsx'
 import { initializeAuthHeader } from './services/authService.ts'
+import { Toaster } from 'react-hot-toast'
 
 initializeAuthHeader(); // Important : avant tout
 
@@ -15,6 +16,7 @@ createRoot(document.getElementById('root')!).render(
       <BrowserRouter>
         <RootLayout>
           <App />
+          <Toaster position="top-right" reverseOrder={false} />
         </RootLayout>
       </BrowserRouter>
     </AuthProvider>

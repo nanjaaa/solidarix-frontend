@@ -101,7 +101,7 @@ export const Navbar = () => {
                                         <CalendarCheck className="inline-block mr-1 h-5 w-5"/>
                                         Évents
                                     </NavbarLink>
-                                    <NavbarLink to="/messages">
+                                    <NavbarLink to="/discussions">
                                         <MessageCircle className="inline-block mr-1 h-5 w-5"/>
                                         Messages
                                     </NavbarLink>
