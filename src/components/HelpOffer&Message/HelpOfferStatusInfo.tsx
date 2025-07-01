@@ -22,7 +22,7 @@ export default function HelpOfferStatusInfo({
 
     let message: React.ReactNode = "";
     let colorClass = "bg-white text-secondary-lightgray border-gray-300";
-    let icon = <Info className="flex-shrink-0 text-primary-green" />;
+    let icon = <Info className="flex-shrink-0 w-5 h-5 text-primary-green" />;
 
     switch (status) {
     case "PROPOSED":
@@ -129,7 +129,7 @@ export default function HelpOfferStatusInfo({
             message = <>Cette proposition d’aide est expirée.</>;
         }
         colorClass = "bg-red-100 text-red-600 border-red-300";
-        icon = <Clock className="text-center text-red-500" />;
+        icon = <Clock className="text-center w-5 h-5 text-red-500" />;
         break;
 
     case "DONE":

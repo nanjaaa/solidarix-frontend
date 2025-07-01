@@ -9,6 +9,7 @@ import HelpOfferActionZone from "./HelpOfferActionZone";
 import CancellationPanel from "./CancellationPanel";
 import HelpOfferStatusInfo from "./HelpOfferStatusInfo";
 import HelpRequestPresentation from "./HelpRequestPresentation";
+import dayjs from "dayjs"; // si pas déjà importé
 
 
 
@@ -36,6 +37,11 @@ export default function ChatModal({
     const messages  = helpOffer.messages;
     const status    = parseHelpOfferStatus(helpOffer.status);
     const isExpired = status === "EXPIRED";
+    const isConfirmed = status === "CONFIRMED_BY_HELPER";
+
+    const helpDate = dayjs(helpOffer.helpRequest.helpDate);
+    const now = dayjs();
+    const isPast = now.isAfter(helpDate);
 
     const isChatClosed = typeof status === "string" && [
         "DONE",
@@ -90,6 +96,24 @@ export default function ChatModal({
             console.error("Erreur lors de la confirmation :", error);
         }
     };
+
+    const handleMarkDone = async () => {
+        try {
+            // Ici, tu peux appeler ton service backend, par exemple markHelpAsDone()
+            console.log("Marqué comme accompli");
+            onRefreshHelpOffer();
+            onClose();
+        } catch (error) {
+            console.error("Erreur lors du marquage accompli :", error);
+        }
+    };
+
+    const handleReportIncident = () => {
+        // Ici, tu peux ouvrir une modale, naviguer, etc.
+        console.log("Signaler un incident");
+        // Exemple : onClose() ou onRefreshHelpOffer()
+    };
+
 
     if (!isOpen) return null;
 
@@ -191,13 +215,15 @@ export default function ChatModal({
                     <div className="border-t-3 pt-3 mt-1 pb-6 px-4 flex flex-col items-center gap-2">
 
                         {/* Info sur le statut de l'offre (ex: validée, en attente...) */}
-                        <HelpOfferStatusInfo
-                            status={status}
-                            currentUser={currentUser}
-                            requester={helpOffer.helpRequest.requester}
-                            helper={helpOffer.offerer}
-                            cancellationJustification={helpOffer.cancellationJustification}
-                        />
+                        {isConfirmed && !isPast && (
+                            <HelpOfferStatusInfo
+                                status={status}
+                                currentUser={currentUser}
+                                requester={helpOffer.helpRequest.requester}
+                                helper={helpOffer.offerer}
+                                cancellationJustification={helpOffer.cancellationJustification}
+                            />
+                        )}
 
                         {/* Compte à rebours avant expiration (si applicable) */}
                         {isExpirableStatus(status) && (
@@ -218,9 +244,12 @@ export default function ChatModal({
                                 status={status}
                                 currentUserId={currentUser.id}
                                 requesterId={helpOffer.helpRequest.requester.id}
+                                helpRequestDateTime={helpOffer.helpRequest.helpDate}
                                 onCancel={() => setShowCancelPanel(true)}
                                 onValidate={handleValidate}
                                 onConfirm={handleConfirm}
+                                onMarkDone={handleMarkDone}
+                                onReportIncident={handleReportIncident}
                             />
                         )}
 

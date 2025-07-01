@@ -10,13 +10,21 @@ import LandingPage from './pages/LandingPage'
 import { PrivateRoute } from './pages/PrivateRoute'
 
 function App() {
+  const { isAuthenticated, isAuthReady } = useAuth();
 
-  const { isAuthenticated } = useAuth();
+  // Attente que l'état d'auth soit chargé pour éviter le "flash"
+  if (!isAuthReady) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-white">
+        <span className="text-gray-500 text-sm">Chargement...</span>
+      </div>
+    );
+  }
 
   return (
     <Routes>
-
-      {/* Chemin / redirige intelligemment selon état de connexion */}
+      
+      {/* Redirection intelligente selon l'état de connexion */}
       <Route
         path="/"
         element={
@@ -36,13 +44,12 @@ function App() {
         element={isAuthenticated ? <Navigate to="/feed" replace /> : <RegisterPage />}
       />
 
-      {/* Routes privées protégées */}
+      {/* Routes protégées */}
       <Route path="/ask-help" element={<PrivateRoute><HelpRequestPage /></PrivateRoute>} />
       <Route path="/feed" element={<PrivateRoute><FeedPage /></PrivateRoute>} />
       <Route path="/discussions" element={<PrivateRoute><MessagesPage /></PrivateRoute>} />
-
     </Routes>
-  )
+  );
 }
 
-export default App
+export default App;

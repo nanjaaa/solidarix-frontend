@@ -6,6 +6,11 @@ export interface HelpOfferMessageDto {
     sender: UserSimpleDto;
     content: string;
     createdAt: string;
+    
+    isAboutHelpOffer?: boolean;
+    isAboutInvitation?: boolean;
+    isFromFriend?: boolean;
+    seenAt?: string | null;
 }
 
 /*

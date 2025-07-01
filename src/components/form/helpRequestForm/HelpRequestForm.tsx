@@ -20,12 +20,12 @@ type StepKey = "category" | "description" | "helpDate" | "address";
 const questions: { key: StepKey; label: string; placeholder?: string }[] = [
     {
         key: "category",
-        label: "Quel type d’aide recherchez-vous ?",
+        label: "Quel genre d’aide recherchez-vous ?",
         placeholder: "Choisissez parmi les options ci-dessous...",
     },
     {
         key: "description",
-        label: "Pourriez-vous dire un peu plus sur votre besoin :) ?",
+        label: "Racontez en quelques mots ce dont vous avez besoin...”",
         placeholder: "Présentez-vous et décrivez en détail votre besoin....",
     },
     {
