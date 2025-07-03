@@ -1,7 +1,7 @@
+import { useState } from "react";
 import type { HelpOfferStatus } from "../../services/helpOffer";
 import dayjs from "dayjs";
-;
-
+import ConfirmationPanel from "./ConfirmationPanel";
 
 interface HelpOfferActionZoneProps {
     status: HelpOfferStatus;
@@ -26,6 +26,10 @@ export default function HelpOfferActionZone({
     onMarkDone,
     onReportIncident
 }: HelpOfferActionZoneProps) {
+
+    const [showValidateConfirm, setShowValidateConfirm] = useState(false);
+    const [showConfirmConfirm, setShowConfirmConfirm] = useState(false);
+
     const isRequester = currentUserId === requesterId;
     const now = dayjs();
     const helpDate = dayjs(helpRequestDateTime);
@@ -38,29 +42,26 @@ export default function HelpOfferActionZone({
     let showMarkDone = false;
     let showReportIncident = false;
 
-    console.log("isPast : "+isPast);
-
     switch (status) {
         case "PROPOSED":
             message = isRequester
                 ? "Vous avez reçu une proposition. Échangez avec le proposeur si besoin, puis validez ou annulez sa proposition."
                 : "Discutez avec le demandeur pour bien cerner ses besoins. Informez-le de vos disponibilités, puis attendez sa validation.";
             showValidate = isRequester;
-        break;
+            break;
 
         case "VALIDATED_BY_REQUESTER":
             message = isRequester
                 ? "Vous avez validé la proposition. Le proposeur doit maintenant confirmer son engagement."
                 : "Le demandeur a validé votre proposition. Vous pouvez confirmer pour finaliser l’entraide.";
             showConfirm = !isRequester;
-        break;
+            break;
 
         case "CONFIRMED_BY_HELPER":
             if (!isPast) {
                 message = isRequester
                     ? "Vous pouvez encore décliner la proposition avant l'heure prévue."
                     : "Vous pouvez encore retirer votre proposition avant l'heure prévue.";
-                
             } else {
                 message = isRequester
                     ? "L'entraide est terminée. Vous pouvez marquer comme accompli ou signaler un incident."
@@ -69,15 +70,15 @@ export default function HelpOfferActionZone({
                 showMarkDone = isRequester;
                 showReportIncident = true;
             }
-        break;
+            break;
 
         default:
-        return null; // Rien à afficher
+            return null; // Rien à afficher
     }
 
     const cancelLabel = isRequester
         ? "Décliner la proposition"
-        : "Retirer ma proposition"
+        : "Retirer ma proposition";
 
     return (
         <div className="flex flex-col items-center gap-2">
@@ -87,7 +88,7 @@ export default function HelpOfferActionZone({
 
             <div className="flex justify-center gap-3 mt-1">
                 
-                {showCancel && onCancel && (
+                {showCancel && !showValidateConfirm && !showConfirmConfirm && onCancel && (
                     <button
                         className="btn-secondary"
                         onClick={onCancel}
@@ -96,26 +97,51 @@ export default function HelpOfferActionZone({
                         {cancelLabel}
                     </button>
                 )}
-                
 
                 {showValidate && onValidate && (
-                    <button
-                        className="btn btn-base"
-                        onClick={onValidate}
-                        aria-label="Valider"
-                    >
-                        Valider
-                    </button>
+                    showValidateConfirm ? (
+                        <ConfirmationPanel
+                            message="Souhaitez-vous vraiment valider cette proposition ?"
+                            onConfirm={() => {
+                                onValidate();
+                                setShowValidateConfirm(false);
+                            }}
+                            onCancel={() => {
+                                setShowValidateConfirm(false);
+                            }}
+                        />
+                    ) : (
+                        <button
+                            className="btn btn-base"
+                            onClick={() => setShowValidateConfirm(true)}
+                            aria-label="Valider"
+                        >
+                            Valider
+                        </button>
+                    )
                 )}
 
                 {showConfirm && onConfirm && (
-                    <button
-                        className="btn btn-base"
-                        onClick={onConfirm}
-                        aria-label="Confirmer"
-                    >
-                        Confirmer
-                    </button>
+                    showConfirmConfirm ? (
+                        <ConfirmationPanel
+                            message="Souhaitez-vous vraiment confirmer votre engagement ?"
+                            onConfirm={() => {
+                                onConfirm();
+                                setShowConfirmConfirm(false);
+                            }}
+                            onCancel={() => {
+                                setShowConfirmConfirm(false);
+                            }}
+                        />
+                    ) : (
+                        <button
+                            className="btn btn-base"
+                            onClick={() => setShowConfirmConfirm(true)}
+                            aria-label="Confirmer"
+                        >
+                            Confirmer
+                        </button>
+                    )
                 )}
 
                 {showMarkDone && onMarkDone && (
@@ -137,7 +163,6 @@ export default function HelpOfferActionZone({
                         Signaler un incident
                     </button>
                 )}
-
             </div>
         </div>
     );
