@@ -10,7 +10,7 @@ export interface HelpOfferMessageDto {
     isAboutHelpOffer?: boolean;
     isAboutInvitation?: boolean;
     isFromFriend?: boolean;
-    seenAt?: string | null;
+    readByReceiver?: boolean;
 }
 
 /*
@@ -70,11 +70,15 @@ export const sendHelpOfferMessage = async (
     helpOfferId: number,
     message: string
 ): Promise<void> => {
-    await api.post("/help-offer/send-message", {
+    await api.post("/help-offer-message/send", {
         helpOfferId,
         message,
     });
 };
+
+export async function markAllMessagesAsRead(helpOfferId: number): Promise<void> {
+    await api.post(`/help-offer-message/${helpOfferId}/mark-all-as-read`);
+}
 
 export const fetchUserDiscussions = async (): Promise<HelpOfferDiscussionDto[]> => {
     const res = await api.get<HelpOfferDiscussionDto[]>("/help-offer/my-discussions");

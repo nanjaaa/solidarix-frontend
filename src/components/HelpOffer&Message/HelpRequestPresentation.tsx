@@ -15,11 +15,6 @@ export default function HelpRequestPresentation({
     otherUser,
     isHelper,
 }: HelpRequestPresentationProps) {
-    const title = getHelpRequestPresentationTitle(
-        helpRequest.category as HelpCategory,
-        otherUser.firstName,
-        isHelper
-    );
 
     const formattedDate = new Date(helpRequest.helpDate).toLocaleString("fr-FR", {
         weekday: "long",
@@ -32,7 +27,9 @@ export default function HelpRequestPresentation({
     return (
         <div className="mb-4 p-4">
             {/* Titre */}
-            <h3 className="text-2xl font-extrabold text-primary-darkblue mb-3">{title}</h3>
+            <h3 className="text-2xl font-extrabold text-primary-darkblue mb-3">
+                {getHelpRequestPresentationTitle(helpRequest.category as HelpCategory, otherUser, isHelper)}
+            </h3>
 
             {/* Description */}
             <div className="text-secondary-lightgray mb-4">

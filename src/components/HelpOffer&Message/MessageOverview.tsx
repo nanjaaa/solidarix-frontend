@@ -4,6 +4,7 @@ import ChatModal from "./ChatModal";
 import {
     fetchUserDiscussions,
     getHelpOfferDiscussionById,
+    markAllMessagesAsRead,
     sendHelpOfferMessage,
     type HelpOfferDiscussionDto,
     type HelpOfferMessageDto,
@@ -53,6 +54,19 @@ const MessageOverview = () => {
         loadSelectedHelpOffer();
     }, [selectedHelpOfferId]);
 
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            try {
+                const data = await fetchUserDiscussions();
+                setHelpOffers(data);
+            } catch (err) {
+                console.error("Erreur lors du polling des discussions", err);
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, []);
+
     const getOtherUser = (helpOffer: HelpOfferDiscussionDto) => {
         if (!currentUser) return null;
         return helpOffer.helpRequest.requester.id === currentUser.id
@@ -68,7 +82,7 @@ const MessageOverview = () => {
     };
 
     const getUnreadCount = (ho: HelpOfferDiscussionDto) =>
-        ho.messages.filter((m) => m.seenAt == null && m.sender.id !== currentUser?.id).length;
+        ho.messages.filter((m) => !m.readByReceiver && m.sender.id !== currentUser?.id).length;
 
     const handleSendMessage = async (message: string) => {
         if (!selectedHelpOffer || !currentUser) return;
@@ -207,7 +221,11 @@ const MessageOverview = () => {
             {selectedHelpOffer && (
                 <ChatModal
                     isOpen={true}
-                    onClose={() => {
+                    onClose={async () => {
+                        if (selectedHelpOfferId) {
+                            await markAllMessagesAsRead(selectedHelpOfferId);
+                            await refreshHelpOffer(); 
+                        }
                         setSelectedHelpOfferId(null);
                         setSelectedHelpOffer(null);
                     }}

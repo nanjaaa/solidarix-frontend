@@ -113,7 +113,15 @@ export default function HelpOfferStatusInfo({
         break;
 
     case "EXPIRED":
-        if (cancellationJustification === "EXPIRATION_AFTER_REQUESTER_INACTION") {
+        if (cancellationJustification === "NO_FEEDBACK_AFTER_CONFIRMATION") {
+            message = (
+                <>
+                    Le déroulement de l’entraide est inconnu, car nous n’avons pas reçu de retour de la part des deux personnes, bien que l’entraide ait été confirmée.
+                </>
+            );
+            colorClass = "bg-yellow-100 text-yellow-700 border-yellow-300";
+            icon = <Info className="flex-shrink-0 w-5 h-5 text-yellow-600" />;
+        } else if (cancellationJustification === "EXPIRATION_AFTER_REQUESTER_INACTION") {
             message = isRequester ? (
                 <>Trop tard… vous n’avez pas validé la proposition dans les temps.</>
             ) : (

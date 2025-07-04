@@ -1,8 +1,9 @@
 import type { Address } from "../hooks/UseAddressAutocomplete";
 import api from "../lib/axios";
-import type { HelpRequestDto } from "../types/helpRequest";
+import type { HelpRequestDto, User, UserSimpleDto } from "../types/helpRequest";
 import { getCoordinatesFromPostalCode } from "../utils/geolocation";
 import { getAuthToken } from "./authService";
+import React from "react";
 
 export type HelpCategory =
   | "COURSES"
@@ -85,61 +86,86 @@ export const postComment = async (dto: HelpRequestCommentCreationDto) => {
   return response.data;
 };
 
-
 export function getHelpRequestPresentationTitle(
-  category            : HelpCategory,
-  otherUserFirstName  : string,
-  isHelper             : boolean
-): string {
-  const titles: Record<HelpCategory, [string, string]> = {
+  category: HelpCategory,
+  otherUser: UserSimpleDto,
+  isHelper: boolean
+): React.ReactNode {
+  const name = `${otherUser.firstName} ${otherUser.lastName}`;
+  
+  const titles: Record<
+    HelpCategory,
+    [[string, string], [string, string]]
+  > = {
     COURSES: [
-      `Un coup de main à ${otherUserFirstName} pour remplir son frigo`,
-      `${otherUserFirstName} vous aide à faire vos courses tranquillement`,
+      ["Un coup de main à ", " pour remplir son frigo"],
+      ["", " vous aide à faire vos courses tranquillement"],
     ],
     DEMENAGEMENT: [
-      `Vous aidez ${otherUserFirstName} à changer de nid`,
-      `${otherUserFirstName} vous donne un coup de main pour déménager`,
+      ["Vous aidez ", " à changer de nid"],
+      ["", " vous donne un coup de main pour déménager"],
     ],
     GARDE_ENFANT: [
-      `Un moment avec les enfants de ${otherUserFirstName}`,
-      `${otherUserFirstName} garde vos petits pendant votre absence`,
+      ["Un moment avec les enfants de ", ""],
+      ["", " garde vos petits pendant votre absence"],
     ],
     SOUTIEN_SCOLAIRE: [
-      `Vous aidez ${otherUserFirstName} à progresser dans ses études`,
-      `${otherUserFirstName} vous donne un coup de pouce pour vos devoirs`,
+      ["Vous aidez ", " à progresser dans ses études"],
+      ["", " vous donne un coup de pouce pour vos devoirs"],
     ],
     PETITS_TRAVAUX: [
-      `Un peu de bricolage chez ${otherUserFirstName}`,
-      `${otherUserFirstName} vous aide à réparer ou installer quelque chose`,
+      ["Un peu de bricolage chez ", ""],
+      ["", " vous aide à réparer ou installer quelque chose"],
     ],
     INFORMATIQUE: [
-      `Vous dépannez ${otherUserFirstName} avec son ordinateur`,
-      `${otherUserFirstName} vous aide à dompter l’informatique`,
+      ["Vous dépannez ", " avec son ordinateur"],
+      ["", " vous aide à dompter l’informatique"],
     ],
     COMPAGNIE_VISITE: [
-      `Vous passez un moment convivial avec ${otherUserFirstName}`,
-      `${otherUserFirstName} vient partager un moment avec vous`,
+      ["Vous passez un moment convivial avec ", ""],
+      ["", " vient partager un moment avec vous"],
     ],
     TRANSPORT: [
-      `Vous accompagnez ${otherUserFirstName} pour un déplacement`,
-      `${otherUserFirstName} vous conduit là où vous devez aller`,
+      ["Vous accompagnez ", " pour un déplacement"],
+      ["", " vous conduit là où vous devez aller"],
     ],
     CUISINE: [
-      `Vous cuisinez avec ou pour ${otherUserFirstName}`,
-      `${otherUserFirstName} vous donne un coup de main en cuisine`,
+      ["Vous cuisinez avec ou pour ", ""],
+      ["", " vous donne un coup de main en cuisine"],
     ],
     ADMINISTRATIF: [
-      `Vous aidez ${otherUserFirstName} à démêler ses papiers`,
-      `${otherUserFirstName} vous aide avec vos démarches administratives`,
+      ["Vous aidez ", " à démêler ses papiers"],
+      ["", " vous aide avec vos démarches administratives"],
     ],
     AUTRE: [
-      `Un coup de main à ${otherUserFirstName}, tout simplement`,
-      `${otherUserFirstName} vous apporte un peu d’aide selon vos besoins`,
+      ["Un coup de main à ", ", tout simplement"],
+      ["", " vous apporte un peu d’aide selon vos besoins"],
     ],
   };
 
-  const [helperTitle, requesterTitle] = titles[category];
-  return isHelper ? helperTitle : requesterTitle;
+  const [helperParts, requesterParts] = titles[category];
+  const [before, after] = isHelper ? helperParts : requesterParts;
+
+  // Construction sans JSX
+  return React.createElement(
+  React.Fragment,
+  null,
+  before,
+  React.createElement(
+    "a",
+    {
+      href: `/user/${otherUser.id}`,
+      className: "text-primary-green font-semibold cursor-pointer relative " +
+                 "after:absolute after:left-0 after:-bottom-0.5 after:h-[2px] after:w-0 after:bg-primary-green " +
+                 "after:transition-[width] after:duration-300 after:ease-in-out hover:after:w-full",
+      // onClick: (e) => { e.preventDefault(); /* navigation client-side */ }
+    },
+    name
+  ),
+  after
+);
+
 }
+
 
 
