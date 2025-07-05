@@ -17,6 +17,12 @@ import CancellationPanel from "./CancellationPanel";
 import HelpOfferStatusInfo from "./HelpOfferStatusInfo";
 import HelpRequestPresentation from "./HelpRequestPresentation";
 import dayjs from "dayjs";
+import localizedFormat from "dayjs/plugin/localizedFormat";
+import "dayjs/locale/fr";
+
+dayjs.extend(localizedFormat);
+dayjs.locale("fr");
+
 
 interface ChatModalProps {
     isOpen: boolean;
@@ -36,16 +42,20 @@ export default function ChatModal({
     onRefreshHelpOffer,
 }: ChatModalProps) {
     const [newMessage, setNewMessage] = useState("");
-    const textareaRef = useAutoResizeTextarea(newMessage, 4);
-    const scrollRef = useRef<HTMLDivElement>(null);
     const [showCancelPanel, setShowCancelPanel] = useState(false);
 
-    const messages = helpOffer.messages;
-    const status = parseHelpOfferStatus(helpOffer.status);
-    const isConfirmed = status === "CONFIRMED_BY_HELPER";
+    const textareaRef = useAutoResizeTextarea(newMessage, 4);
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-    const helpDate = dayjs(helpOffer.helpRequest.helpDate);
-    const now = dayjs();
+
+    const messages = helpOffer.messages;
+    const prevMessagesLength = useRef(helpOffer.messages.length);
+
+    const status = parseHelpOfferStatus(helpOffer.status);
+    const [activeMessageId, setActiveMessageId] = useState<number | null>(null);
+
+
 
     const isChatClosed = typeof status === "string" && [
         "DONE",
@@ -78,21 +88,44 @@ export default function ChatModal({
 
     // Scroll toujours en bas
     useEffect(() => {
-        scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
+        if (messages.length > prevMessagesLength.current) {
+            scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+        }
+        prevMessagesLength.current = messages.length;
+    }, [messages.length]);
 
     // Polling pour rafraîchir dans modal
     useEffect(() => {
         if (!isOpen) return;
+
+        let prevScrollHeight = 0;
+        let prevScrollTop = 0;
+        let prevLength = messages.length;
+
         const interval = setInterval(async () => {
-            try {
-                await onRefreshHelpOffer();
-            } catch (err) {
-                console.error("Erreur lors du polling", err);
+            if (messagesContainerRef.current) {
+                prevScrollHeight = messagesContainerRef.current.scrollHeight;
+                prevScrollTop = messagesContainerRef.current.scrollTop;
+                prevLength = messages.length;
             }
+
+            await onRefreshHelpOffer();
+
+            setTimeout(() => {
+                if (
+                    messagesContainerRef.current &&
+                    messages.length === prevLength // <---- si pas de nouveau message, on restaure la position précédente !
+                ) {
+                    messagesContainerRef.current.scrollTop =
+                        messagesContainerRef.current.scrollHeight - (prevScrollHeight - prevScrollTop);
+                }
+            }, 0);
         }, 1000);
+
         return () => clearInterval(interval);
-    }, [isOpen, onRefreshHelpOffer]);
+        // ajoute messages dans les dépendances si besoin
+    }, [isOpen, onRefreshHelpOffer, messages]);
+
 
     const handleCancellation = async (justification: string) => {
         try {
@@ -163,36 +196,82 @@ export default function ChatModal({
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 flex flex-col overflow-y-auto px-6 pt-4 space-y-2">
+                <div 
+                    ref={messagesContainerRef}
+                    className="flex-1 flex flex-col overflow-y-auto px-6 pt-4 space-y-2"
+                >
                     <div className="flex flex-col gap-3 pr-2">
-                        {messages.map((msg) => {
-                            const isOwn = msg.sender.id === currentUser.id;
-                            const avatarUrl = `https://api.dicebear.com/6.x/lorelei/svg?seed=${msg.sender.id}`;
-                            return (
-                                <div
-                                    key={msg.id}
-                                    className={`flex items-end gap-2 ${isOwn ? "justify-end" : "justify-start"}`}
-                                >
-                                    {!isOwn && (
-                                        <img
-                                            src={avatarUrl}
-                                            alt={msg.sender.firstName}
-                                            className="w-8 h-8 rounded-full"
-                                        />
-                                    )}
-                                    <div
-                                        className={`px-4 py-2 max-w-[60%] shadow-md select-none whitespace-pre-wrap break-words ${
-                                            isOwn
-                                                ? "bg-white text-gray-800 rounded-bl-3xl rounded-tr-3xl rounded-tl-3xl"
-                                                : "bg-primary-green text-white rounded-br-3xl rounded-tl-3xl rounded-tr-3xl"
-                                        }`}
-                                    >
-                                        {msg.content}
+                        {(() => {
+                            let lastMessageDate: string | null = null;
+                            return messages.flatMap((msg, index) => {
+                                const messageDate = dayjs(msg.createdAt);
+                                const messageDateFormatted = messageDate.format("YYYY-MM-DD");
+                                const showDateSeparator = messageDateFormatted !== lastMessageDate;
+                                lastMessageDate = messageDateFormatted;
+
+                                const dateLabel = messageDate.isSame(dayjs(), "day")
+                                    ? "Aujourd’hui"
+                                    : messageDate.format("D MMMM YYYY");
+
+                                const isOwn = msg.sender.id === currentUser.id;
+                                const avatarUrl = `https://api.dicebear.com/6.x/lorelei/svg?seed=${msg.sender.id}`;
+                                const timeLabel = messageDate.format("HH:mm");
+                                const isActive = activeMessageId === msg.id;
+
+                                // Styles selon type et actif
+                                const bubbleBase = isOwn
+                                    ? "bg-white text-gray-800 rounded-bl-3xl rounded-tr-3xl rounded-tl-3xl"
+                                    : "bg-primary-green text-white rounded-br-3xl rounded-tl-3xl rounded-tr-3xl";
+                                const bubbleActive = isOwn
+                                    ? "bg-gray-200 text-gray-700"
+                                    : "bg-green-700 text-green-50";
+
+                                return [
+                                    showDateSeparator && (
+                                        <div
+                                            key={"date-separator-" + index}
+                                            className="text-center text-sm text-gray-400 mt-4 mb-2 select-none"
+                                        >
+                                            {dateLabel}
+                                        </div>
+                                    ),
+                                    <div className={`flex gap-2 ${isOwn ? "justify-end" : "justify-start"} items-end`}>
+                                        {!isOwn && (
+                                            <img
+                                                src={avatarUrl}
+                                                alt={msg.sender.firstName}
+                                                className="w-8 h-8 rounded-full self-start mt-1"
+                                            />
+                                        )}
+                                        <div className="flex flex-col max-w-[60%]">
+                                            <div
+                                                className={`
+                                                    px-4 py-2 shadow-md select-none whitespace-pre-wrap break-words
+                                                    transition-colors duration-150 cursor-pointer
+                                                    ${bubbleBase} ${isActive ? bubbleActive : ""}
+                                                    ${isOwn ? "self-end" : "self-start"}
+                                                `}
+                                                onClick={() => setActiveMessageId(isActive ? null : msg.id ?? null)}
+                                            >
+                                                {msg.content}
+                                            </div>
+                                            {isActive && (
+                                                <div
+                                                    className={`
+                                                    text-xs mt-1 transition-colors duration-150
+                                                    ${isOwn ? "text-gray-700 text-right self-end" : "text-hover-green text-left self-start"}
+                                                    `}
+                                                >
+                                                    Envoyé à {timeLabel}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            );
-                        })}
+                                ].filter(Boolean);
+                            });
+                        })()}
                         <div ref={scrollRef} />
+
                     </div>
 
                     {/* Zone de saisie */}
@@ -202,7 +281,18 @@ export default function ChatModal({
                                 ref={textareaRef}
                                 rows={1}
                                 placeholder="Écrivez un message..."
-                                className="w-[60%] min-h-[40px] max-h-[300px] bg-background-ow outline-none px-4 py-2 rounded-bl-3xl rounded-tr-3xl rounded-tl-3xl shadow-inner border border-gray-300 resize-none overflow-y-auto whitespace-pre-wrap"
+                                className="
+                                    w-[60%] 
+                                    min-h-[40px] 
+                                    max-h-[300px] 
+                                    bg-background-ow 
+                                    outline-none 
+                                    px-4 py-2 
+                                    rounded-bl-3xl rounded-tr-3xl rounded-tl-3xl 
+                                    shadow-inner border border-gray-300 
+                                    resize-none 
+                                    overflow-y-auto 
+                                    whitespace-pre-wrap"
                                 value={newMessage}
                                 onChange={(e) => setNewMessage(e.target.value)}
                             />
