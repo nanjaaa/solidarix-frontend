@@ -25,7 +25,7 @@ export default function HelpRequestPresentation({
     });
 
     return (
-        <div className="mb-4 p-4">
+        <div className="mb-0 p-4 border-b-2 border-primary-blue">
             {/* Titre */}
             <h3 className="text-2xl font-extrabold text-primary-darkblue mb-3">
                 {getHelpRequestPresentationTitle(helpRequest.category as HelpCategory, otherUser, isHelper)}

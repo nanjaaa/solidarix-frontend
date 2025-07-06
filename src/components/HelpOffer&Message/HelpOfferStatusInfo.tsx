@@ -142,17 +142,28 @@ export default function HelpOfferStatusInfo({
 
     case "DONE":
         message = isRequester ? (
-            <>Merci pour votre participation. Cette entraide est terminée.</>
+            <>L’entraide s’est bien achevée. Merci pour votre confiance !</>
         ) : (
             <>
-                Merci d’avoir apporté votre aide à{" "}
-                <span className=" text-primary-green font-bold">
-                    {requester.firstName} {requester.lastName}
-                </span>
-                . Cette entraide est maintenant terminée.
+            Merci d’avoir apporté votre aide à{' '}
+            <span className="text-primary-green font-bold">
+                {requester.firstName} {requester.lastName}
+            </span>
+            . L’entraide est désormais terminée.
             </>
         );
         colorClass = "bg-green-100 text-green-800 border-green-300";
+        icon = <Info className="flex-shrink-0 w-5 h-5 text-green-600" />;
+        break;
+
+    case "FAILED":
+        message = isRequester ? (
+            <>L’entraide n’a pas abouti comme prévu.</>
+        ) : (
+            <>L’entraide n’a pas pu se dérouler correctement.</>
+        );
+        colorClass = "bg-red-100 text-red-600 border-red-300";
+        icon = <AlertCircle className="flex-shrink-0 w-5 h-5 text-red-500" />;
         break;
 
     default:

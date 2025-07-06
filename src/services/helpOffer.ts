@@ -33,6 +33,9 @@ export interface HelpOfferDiscussionDto {
     canceledAt?: string | null;
     cancellationJustification?: string | null;
     messages: HelpOfferMessageDto[];
+    hasCurrentUserSubmittedFeedback: boolean;
+    hasCurrentUserReportedIncident: boolean;
+    isCurrentUserFirstIncidentReporter?: boolean
 }
 
 
@@ -105,3 +108,20 @@ export async function getHelpOfferDiscussionById(helpOfferId: number): Promise<H
     const response = await api.get(`/help-offer/${helpOfferId}`);
     return response.data;
 }
+
+export async function markHelpOfferAsDone(helpOfferId: number, feedback: string): Promise<void> {
+    await api.post(`/help-offer/${helpOfferId}/mark-as-done`, { feedback });
+}
+
+export async function addHelpOfferFeedback(helpOfferId: number, feedback: string): Promise<void> {
+    await api.post(`/help-offer/${helpOfferId}/add-feedback`, { feedback });
+}
+
+export async function markHelpOfferAsFailed(helpOfferId: number, incident: { type: string; description: string }): Promise<void> {
+    await api.post(`/help-offer/${helpOfferId}/mark-as-failed`, incident);
+}
+
+export async function reportHelpOfferIncident(helpOfferId: number, incident: { type: string; description: string }): Promise<void> {
+    await api.post(`/help-offer/${helpOfferId}/report-incident`, incident);
+}
+

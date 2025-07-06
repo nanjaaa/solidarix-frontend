@@ -6,6 +6,7 @@ import ConfirmationPanel from "./ConfirmationPanel";
 interface HelpOfferActionZoneProps {
     status: HelpOfferStatus;
     currentUserId: number;
+    otherUserName: string;
     requesterId: number;
     helpRequestDateTime: string;
     onValidate?: () => void;
@@ -13,18 +14,25 @@ interface HelpOfferActionZoneProps {
     onCancel: () => void;
     onMarkDone?: () => void;
     onReportIncident?: () => void;
+    shouldSubmitExperience?: boolean;
+    onSubmitExperience: () => void;
+    isCurrentUserFirstIncidentReporter?: boolean
 }
 
 export default function HelpOfferActionZone({
     status,
     currentUserId,
+    otherUserName,
     requesterId,
     helpRequestDateTime,
     onValidate,
     onConfirm,
     onCancel,
     onMarkDone,
-    onReportIncident
+    onReportIncident,
+    shouldSubmitExperience,
+    onSubmitExperience,
+    isCurrentUserFirstIncidentReporter
 }: HelpOfferActionZoneProps) {
 
     const [showValidateConfirm, setShowValidateConfirm] = useState(false);
@@ -41,6 +49,7 @@ export default function HelpOfferActionZone({
     let showCancel = true;
     let showMarkDone = false;
     let showReportIncident = false;
+
 
     switch (status) {
         case "PROPOSED":
@@ -60,20 +69,47 @@ export default function HelpOfferActionZone({
         case "CONFIRMED_BY_HELPER":
             if (!isPast) {
                 message = isRequester
-                    ? "Vous pouvez encore décliner la proposition avant l'heure prévue."
-                    : "Vous pouvez encore retirer votre proposition avant l'heure prévue.";
+                    ? "Vous avez la possibilité d’abandonner cette entraide avant l’heure fixée."
+                    : "Vous avez la possibilité de retirer votre engagement tant que l’heure prévue n’est pas atteinte. ";
             } else {
                 message = isRequester
-                    ? "L'entraide est terminée. Vous pouvez marquer comme accompli ou signaler un incident."
-                    : "L'entraide est terminée. Vous pouvez signaler un incident si besoin.";
+                    ? "L'entraide est terminée? Vous pouvez marquer comme accompli ou signaler un incident."
+                    : "L'entraide est terminée? N’hésitez pas à signaler tout incident éventuel .";
                 showCancel = false;
                 showMarkDone = isRequester;
                 showReportIncident = true;
             }
             break;
 
-        default:
-            return null; // Rien à afficher
+        case "DONE":
+            if (!isRequester) {
+                message = "Vous avez laissé un retour d'expérience.";
+            } else {
+                if (shouldSubmitExperience) {
+                    message = `${otherUserName} a laissé un retour d'expérience.`;
+                } else {
+                    message = `Vous et ${otherUserName} avez laissé un retour d'expérience.`;
+                }
+            }
+            showCancel = false;
+            break;
+
+        case "FAILED":
+            if (isCurrentUserFirstIncidentReporter) {
+                message = "Vous avez signalé un incident lors de cette entraide.";
+            } else if (shouldSubmitExperience) {
+                message = `${otherUserName} a signalé un incident lors de cette entraide.`;
+            } else {
+                message = `Un ou des incidents ont été signalés lors de cette entraide.`;
+            }
+            showCancel = false;
+            break;
+
+    default:
+        showCancel = false;
+        message = ""; // Rien à afficher
+
+
     }
 
     const cancelLabel = isRequester
@@ -163,6 +199,47 @@ export default function HelpOfferActionZone({
                         Signaler un incident
                     </button>
                 )}
+
+                {shouldSubmitExperience && (
+                    <button
+                        className="btn btn-base"
+                        onClick={onSubmitExperience}
+                        aria-label={
+                            (status as string) === "FAILED"
+                                ? "Donner mon avis sur l'incident"
+                                : "Laisser un retour sur l’entraide"
+                        }
+                    >
+                        {(status as string) === "FAILED" ? "Donner des précisions sur l’incident" : "Laisser un commentaire sur l’entraide"}
+                    </button>
+                )}
+
+                {status === "FAILED" && (
+                    <button
+                        className="btn btn-base"
+                        onClick={
+                            /*Ajouter ici la fonction qui redirige vers le rapport d'incident*/
+                            () => {}
+                        }
+                        aria-label="Voir le rapport d'incident"
+                    >
+                        Voir le rapport d'incident
+                    </button>
+                )}
+
+                {status === "DONE" && (
+                    <button
+                        className="btn btn-base"
+                        onClick={
+                            /*Ajouter ici la fonction qui redirige vers les feddbacks*/
+                            () => {}
+                        }
+                        aria-label="Voir les retours"
+                    >
+                        Voir les retours
+                    </button>
+                )}
+
             </div>
         </div>
     );
